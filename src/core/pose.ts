@@ -24,6 +24,9 @@ const P = {
 
 const SMOOTH = 0.45
 
+/** 部署到子路径（GitHub Pages 的 /<repo>/）时，静态资源必须跟着 base 走 */
+const BASE = import.meta.env.BASE_URL
+
 function dist(a: Pt, b: Pt) {
   return Math.hypot(a.x - b.x, a.y - b.y)
 }
@@ -60,9 +63,9 @@ export class PoseTracker {
   private fpsN = 0
 
   async init() {
-    const fileset = await FilesetResolver.forVisionTasks('/wasm')
+    const fileset = await FilesetResolver.forVisionTasks(`${BASE}wasm`)
     const opts = (delegate: 'GPU' | 'CPU') => ({
-      baseOptions: { modelAssetPath: '/models/pose_landmarker_lite.task', delegate },
+      baseOptions: { modelAssetPath: `${BASE}models/pose_landmarker_lite.task`, delegate },
       runningMode: 'VIDEO' as const,
       numPoses: this.numPoses,
       minPoseDetectionConfidence: 0.5,
