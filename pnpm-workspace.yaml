@@ -1,0 +1,6 @@
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - vue-router@5.5.1
