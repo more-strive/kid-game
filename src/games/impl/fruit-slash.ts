@@ -7,20 +7,27 @@ type Kind = 'round' | 'oval' | 'crescent' | 'cluster'
 interface FruitType {
   color: string
   color2: string
+  flesh: string
   kind: Kind
   leaf: boolean
 }
 
 const FRUITS: FruitType[] = [
-  { color: '#ff4d6d', color2: '#c9184a', kind: 'round', leaf: true },      // 苹果
-  { color: '#ff9f1c', color2: '#e85d04', kind: 'round', leaf: false },     // 橙子
-  { color: '#ffd166', color2: '#f5a623', kind: 'oval', leaf: false },      // 柠檬
-  { color: '#9b5de5', color2: '#6a2fb5', kind: 'cluster', leaf: true },    // 葡萄
-  { color: '#7bc950', color2: '#3f8f22', kind: 'round', leaf: true },      // 青苹果
-  { color: '#ff8fa3', color2: '#e5537a', kind: 'round', leaf: true },      // 桃子
-  { color: '#ffe066', color2: '#e8b800', kind: 'crescent', leaf: false },  // 香蕉
-  { color: '#66d9a3', color2: '#2f9e6b', kind: 'oval', leaf: false },      // 猕猴桃
+  { color: '#ff4d6d', color2: '#c9184a', flesh: '#fff1ec', kind: 'round', leaf: true },      // 苹果
+  { color: '#ff9f1c', color2: '#e85d04', flesh: '#ffc98a', kind: 'round', leaf: false },     // 橙子
+  { color: '#ffd166', color2: '#f5a623', flesh: '#fff7c2', kind: 'oval', leaf: false },      // 柠檬
+  { color: '#9b5de5', color2: '#6a2fb5', flesh: '#e8d9ff', kind: 'cluster', leaf: true },    // 葡萄
+  { color: '#7bc950', color2: '#3f8f22', flesh: '#f0ffe0', kind: 'round', leaf: true },      // 青苹果
+  { color: '#ff8fa3', color2: '#e5537a', flesh: '#ffe3e9', kind: 'round', leaf: true },      // 桃子
+  { color: '#ffe066', color2: '#e8b800', flesh: '#fff5cf', kind: 'crescent', leaf: false },  // 香蕉
+  { color: '#66d9a3', color2: '#2f9e6b', flesh: '#dff7ec', kind: 'oval', leaf: false },      // 猕猴桃
 ]
+
+/** 一个切面：a 是切线在水果局部坐标里的角度，s 表示保留哪一侧（1 保留 y>0，-1 保留 y<0） */
+interface Clip {
+  a: number
+  s: number
+}
 
 interface Fruit {
   x: number
@@ -28,13 +35,16 @@ interface Fruit {
   vx: number
   vy: number
   r: number
+  fullR: number
   type: FruitType
   rot: number
   spin: number
   alive: boolean
   bomb: boolean
-  cut: boolean
   life: number
+  gen: number
+  clips: Clip[]
+  immune: number
 }
 
 const G = 1500
@@ -103,6 +113,39 @@ function drawFruit(c: CanvasRenderingContext2D, r: number, t: FruitType) {
   }
 }
 
+/** 画水果块：没切过（clips 为空）就是整果；切过则按每个切面裁掉另一半，并沿切线画出果肉截面 */
+function drawPiece(c: CanvasRenderingContext2D, fullR: number, t: FruitType, clips: Clip[]) {
+  if (!clips.length) {
+    drawFruit(c, fullR, t)
+    return
+  }
+  const M = fullR * 2.4
+  c.save()
+  c.beginPath()
+  for (const cl of clips) {
+    c.save()
+    c.rotate(cl.a)
+    c.rect(-M, cl.s > 0 ? 0 : -M, M * 2, M)
+    c.restore()
+  }
+  c.clip()
+  drawFruit(c, fullR, t)
+  for (const cl of clips) {
+    c.save()
+    c.rotate(cl.a)
+    c.beginPath()
+    c.ellipse(0, 0, fullR * 0.8, fullR * 0.15, 0, 0, Math.PI * 2)
+    c.fillStyle = t.flesh
+    c.fill()
+    c.beginPath()
+    c.ellipse(0, 0, fullR * 0.55, fullR * 0.08, 0, 0, Math.PI * 2)
+    c.fillStyle = 'rgba(255,255,255,.5)'
+    c.fill()
+    c.restore()
+  }
+  c.restore()
+}
+
 function drawBomb(c: CanvasRenderingContext2D, r: number, t: number) {
   const g = c.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r)
   g.addColorStop(0, '#4a4a5c')
@@ -165,6 +208,7 @@ class FruitSlash extends BaseGame implements Game {
       fr.y += fr.vy * dt
       fr.rot += fr.spin * dt
       fr.life -= dt
+      if (fr.immune > 0) fr.immune -= dt
       if (fr.y > this.H + 120 || fr.life <= 0) fr.alive = false
     }
 
@@ -181,9 +225,10 @@ class FruitSlash extends BaseGame implements Game {
         if (trail.length < 2) continue
         const a = trail[trail.length - 2]
         const z = trail[trail.length - 1]
+        const swipe = Math.atan2(z.y - a.y, z.x - a.x)
         for (const fr of this.fruits) {
-          if (!fr.alive || fr.cut) continue
-          if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + 18)) this.slice(fr)
+          if (!fr.alive || fr.immune > 0) continue
+          if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + 18)) this.slice(fr, swipe)
         }
       }
     }
@@ -205,27 +250,29 @@ class FruitSlash extends BaseGame implements Game {
     const targetH = 430 + Math.random() * 180
     const vy = -Math.sqrt(2 * G * targetH)
     const vx = (this.W / 2 - x) * 0.2 + (Math.random() - 0.5) * 70
+    const r = 46 + Math.random() * 12
     this.fruits.push({
       x,
       y: this.H + 70,
       vx,
       vy,
-      r: 46 + Math.random() * 12,
+      r,
+      fullR: r,
       type,
       rot: Math.random() * 6,
       spin: (Math.random() - 0.5) * 2.4,
       alive: true,
       bomb: isBomb,
-      cut: false,
       life: 6,
+      gen: 0,
+      clips: [],
+      immune: 0,
     })
   }
 
-  private slice(fr: Fruit) {
-    fr.cut = true
+  private slice(fr: Fruit, swipe: number) {
     fr.alive = false
-    const color = fr.bomb ? '#ff5c5c' : fr.type.color
-    this.sliceFx.push({ x: fr.x, y: fr.y, a: Math.atan2(fr.vy, fr.vx), life: 0.32, color })
+    this.sliceFx.push({ x: fr.x, y: fr.y, a: swipe, life: 0.32, color: fr.bomb ? '#ff5c5c' : fr.type.color })
     if (fr.bomb) {
       this.ctx.audio.hit()
       this.particles.burst(fr.x, fr.y, '#ff5c5c', 30, 560, 9)
@@ -240,15 +287,44 @@ class FruitSlash extends BaseGame implements Game {
     this.combo++
     this.comboT = 0.9
     this.ctx.setCombo(this.combo)
-    const gain = 10 + Math.min(30, (this.combo - 1) * 4)
+    const base = [10, 6, 4][fr.gen] ?? 4
+    const gain = base + Math.min(30, (this.combo - 1) * 4)
     this.score += gain
     this.ctx.audio.slash()
     this.particles.burst(fr.x, fr.y, fr.type.color, 18, 400, 7)
     this.particles.burst(fr.x, fr.y, '#ffffff', 6, 240, 3)
-    this.say(`+${gain}`, fr.x, fr.y - 10, this.combo >= 4 ? '#fff36b' : '#ffffff', 34)
+    this.say(`+${gain}`, fr.x, fr.y - 10, this.combo >= 4 ? '#fff36b' : '#ffffff', fr.gen === 0 ? 34 : 28)
     if (this.combo % 5 === 0) {
       this.ctx.audio.good()
       this.say(`连击 ${this.combo}！`, this.W / 2, 210, '#ffd54a', 52)
+    }
+    // 小块再切就直接碎了；整果 / 半块一分为二，两块还能继续切
+    if (fr.gen >= 2) {
+      this.particles.burst(fr.x, fr.y, fr.type.flesh, 22, 420, 6)
+      return
+    }
+    const shrink = fr.gen === 0 ? 0.94 : 0.8
+    const nx = -Math.sin(swipe)
+    const ny = Math.cos(swipe)
+    for (const s of [1, -1]) {
+      const k = 120 + Math.random() * 70
+      this.fruits.push({
+        x: fr.x + nx * s * 10,
+        y: fr.y + ny * s * 10,
+        vx: fr.vx + nx * s * k,
+        vy: fr.vy + ny * s * k - 40,
+        r: fr.fullR * shrink * (fr.gen === 0 ? 0.72 : 0.5),
+        fullR: fr.fullR * shrink,
+        type: fr.type,
+        rot: fr.rot,
+        spin: s * (1.6 + Math.random() * 1.8),
+        alive: true,
+        bomb: false,
+        life: Math.max(fr.life, 2.6),
+        gen: fr.gen + 1,
+        clips: [...fr.clips, { a: swipe - fr.rot, s }],
+        immune: 0.16,
+      })
     }
   }
 
@@ -274,13 +350,13 @@ class FruitSlash extends BaseGame implements Game {
       c.save()
       c.translate(fr.x, fr.y)
       if (fr.bomb) {
-        glow(c, 0, 0, fr.r * 1.9, '#ff5c5c', 0.42)
+        glow(c, 0, 0, fr.fullR * 1.9, '#ff5c5c', 0.42)
       } else {
-        glow(c, 0, 0, fr.r * 1.6, fr.type.color, 0.22)
+        glow(c, 0, 0, fr.fullR * (fr.gen === 0 ? 1.6 : 1.15), fr.type.color, 0.22)
       }
       c.rotate(fr.rot)
-      if (fr.bomb) drawBomb(c, fr.r, this.t)
-      else drawFruit(c, fr.r, fr.type)
+      if (fr.bomb) drawBomb(c, fr.fullR, this.t)
+      else drawPiece(c, fr.fullR, fr.type, fr.clips)
       c.restore()
     }
 
@@ -294,7 +370,7 @@ class FruitSlash extends BaseGame implements Game {
       ring(c, this.W / 2 + 86, 50, 18, pct, '#ffd54a', 5)
     }
 
-    txt(c, '挥手切水果，别碰炸弹', this.W / 2, this.H - 34, 20, 'rgba(255,255,255,.8)', 'center', 'bold')
+    txt(c, '水果能连切三刀：半块、小块都能再切，炸弹别碰', this.W / 2, this.H - 34, 20, 'rgba(255,255,255,.8)', 'center', 'bold')
   }
 }
 
