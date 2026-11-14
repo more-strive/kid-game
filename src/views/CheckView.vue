@@ -13,6 +13,15 @@ const brightness = ref(0)
 const personCount = ref(0)
 const bodyHeight = ref(0)
 const fullBody = ref(false)
+const headOk = ref(false)
+const handsOk = ref(0)
+
+/** 关键点是否真的「看得见」：置信度够高，且没有跑到画面外 */
+function visOk(p: { x: number; y: number; visibility?: number }) {
+  return (
+    (p.visibility ?? 1) > 0.5 && p.x > 0.015 && p.x < 0.985 && p.y > 0.015 && p.y < 0.985
+  )
+}
 
 let raf = 0
 const sample = document.createElement('canvas')
@@ -50,12 +59,38 @@ function drawSkeleton(b: Body | null) {
     c.fillStyle = '#ffd54a'
     c.fill()
   }
-  // 手部高亮
+
+  // 头：以鼻子为圆心画一个圈，没看到就是空心虚线
+  const headR = Math.max(14, k * 0.032)
+  c.beginPath()
+  c.arc(X(b.head.x), Y(b.head.y), headR, 0, Math.PI * 2)
+  c.lineWidth = Math.max(3, k * 0.004)
+  if (headOk.value) {
+    c.strokeStyle = '#3ddc97'
+    c.setLineDash([])
+    c.stroke()
+  } else {
+    c.strokeStyle = 'rgba(255,90,120,.9)'
+    c.setLineDash([8, 7])
+    c.stroke()
+    c.setLineDash([])
+  }
+
+  // 手：看得见是实心粉色圆盘，看不见是红色虚线空圈
+  const handR = Math.max(9, k * 0.012)
   for (const h of [b.lHand, b.rHand]) {
     c.beginPath()
-    c.arc(X(h.x), Y(h.y), Math.max(9, k * 0.012), 0, Math.PI * 2)
-    c.fillStyle = 'rgba(255,51,133,.85)'
-    c.fill()
+    c.arc(X(h.x), Y(h.y), handR, 0, Math.PI * 2)
+    if (visOk(h)) {
+      c.fillStyle = 'rgba(255,51,133,.85)'
+      c.fill()
+    } else {
+      c.lineWidth = Math.max(3, k * 0.0045)
+      c.strokeStyle = 'rgba(255,90,120,.9)'
+      c.setLineDash([6, 6])
+      c.stroke()
+      c.setLineDash([])
+    }
   }
 }
 
@@ -90,9 +125,13 @@ function loop() {
       b.head.y > 0.02 &&
       b.lm[27].visibility > 0.4 &&
       b.lm[28].visibility > 0.4
+    headOk.value = visOk(b.head)
+    handsOk.value = (visOk(b.lHand) ? 1 : 0) + (visOk(b.rHand) ? 1 : 0)
   } else {
     bodyHeight.value = 0
     fullBody.value = false
+    headOk.value = false
+    handsOk.value = 0
   }
 }
 
@@ -122,6 +161,24 @@ const items = computed(() => [
     ok: personCount.value > 0,
     title: '看到你了',
     tip: personCount.value > 0 ? `检测到 ${personCount.value} 个人` : '站到摄像头前，让整个人进画面',
+  },
+  {
+    ok: headOk.value,
+    title: '看到头了',
+    tip: !personCount.value
+      ? '还没看到人'
+      : headOk.value
+        ? '头在画面里'
+        : '头没被认出来：往后退一点，别低头，帽子/刘海别挡脸',
+  },
+  {
+    ok: handsOk.value === 2,
+    title: '两只手都在画面里',
+    tip: !personCount.value
+      ? '还没看到人'
+      : handsOk.value === 2
+        ? '两只手都看得到'
+        : `只看到 ${handsOk.value}/2 只手，把手抬到身前挥一挥（别贴身体、别伸出画面外）`,
   },
   {
     ok: fullBody.value,
@@ -167,7 +224,7 @@ onBeforeUnmount(() => {
   <div class="page py-10">
     <h1 class="text-[34px] font-black tracking-tight">设备检测</h1>
     <p class="mt-2 text-slate-500 text-sm max-w-2xl">
-      1 分钟查完摄像头、光线和站位。检测只在这台电脑上做，画面不会上传。
+      1 分钟查完摄像头、光线和站位，并确认头、双手都能被认出来（游戏判定主要靠它们）。检测只在这台电脑上做，画面不会上传。
     </p>
 
     <div class="grid lg:grid-cols-[1fr_380px] gap-8 mt-7">
@@ -222,8 +279,8 @@ onBeforeUnmount(() => {
         <div class="card p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-black text-lg">检测结果</h2>
-            <span class="text-sm font-black" :class="passed === 4 ? 'text-mint-500' : 'text-slate-400'"
-              >{{ passed }}/4</span>
+            <span class="text-sm font-black" :class="passed === items.length ? 'text-mint-500' : 'text-slate-400'"
+              >{{ passed }}/{{ items.length }}</span>
           </div>
           <ul class="space-y-3">
             <li v-for="it in items" :key="it.title" class="flex gap-3">
