@@ -88,6 +88,8 @@ export interface GameContext {
 export interface Game {
   update(f: PoseFrame, dt: number): void
   draw(c: CanvasRenderingContext2D): void
+  /** 场景装饰背景（public/bg/<name>.svg），只画在画面上下边缘，不挡摄像头 */
+  bg?: string
   reset?(): void
   destroy?(): void
 }

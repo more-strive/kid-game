@@ -1,9 +1,29 @@
 import { BaseGame } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, glow, outlineTxt, star, txt } from '@/core/draw'
+import { drawItem, preloadItems } from '@/core/sprites'
 
 /** 接物类原型：东西掉下来，用手接住 */
 type Shape = 'gift' | 'number' | 'letter' | 'drop' | 'star' | 'coin' | 'fish'
+
+/** 每种形状用的贴图素材；空串表示保留矢量绘制（数字/字母要写字） */
+const ITEM_OF: Record<Shape, string> = {
+  gift: 'gift',
+  drop: 'bubble',
+  fish: 'fish',
+  star: 'star',
+  number: '',
+  letter: '',
+  coin: '',
+}
+
+/** 个别游戏换成更贴切的素材 */
+const ITEM_BY_SLUG: Record<string, string> = {
+  'bounce-ball': 'basketball',
+  'llama-treat': 'cookie',
+  'sea-lion': 'note',
+  firefly: 'sparkle',
+}
 
 interface Theme {
   shape: Shape
@@ -54,6 +74,7 @@ class CatchGame extends BaseGame implements Game {
   constructor(ctx: GameContext) {
     super(ctx)
     this.theme = THEMES[ctx.meta.slug] ?? { shape: 'star', color: '#ffd54a', unit: '个', mode: 'plain', hint: '接住落下来的东西' }
+    preloadItems(['gift', 'bubble', 'fish', 'star', 'sparkle', 'basketball', 'cookie', 'note'])
     this.newQuestion()
   }
 
@@ -183,6 +204,11 @@ class CatchGame extends BaseGame implements Game {
     c.translate(it.x, it.y)
     glow(c, 0, 0, it.r * 1.8, it.color, 0.3)
     const t = this.theme.shape
+    const pic = ITEM_BY_SLUG[this.ctx.meta.slug] || ITEM_OF[t]
+    if (pic && drawItem(c, pic, 0, 0, it.r * 2.15)) {
+      c.restore()
+      return
+    }
     if (t === 'gift') {
       c.fillStyle = it.color
       c.beginPath()

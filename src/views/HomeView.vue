@@ -101,8 +101,33 @@ const steps = [
               <div class="rounded-2xl overflow-hidden bg-slate-900 aspect-video relative">
                 <div class="absolute inset-0 grid place-items-center">
                   <div class="text-center">
-                    <div class="text-6xl mb-2">🧍‍♂️💫</div>
-                    <div class="text-white/80 font-bold text-sm">摄像头画面在这里</div>
+                    <svg viewBox="0 0 120 160" class="w-[112px] h-[150px] mx-auto" aria-hidden="true">
+                      <g stroke="#5eead4" stroke-width="3.4" stroke-linecap="round" opacity=".9">
+                        <line x1="60" y1="38" x2="60" y2="86" />
+                        <line x1="60" y1="50" x2="33" y2="72" />
+                        <line x1="60" y1="50" x2="87" y2="72" />
+                        <line x1="33" y1="72" x2="21" y2="98" />
+                        <line x1="87" y1="72" x2="99" y2="98" />
+                        <line x1="60" y1="86" x2="43" y2="124" />
+                        <line x1="60" y1="86" x2="77" y2="124" />
+                        <line x1="43" y1="124" x2="41" y2="154" />
+                        <line x1="77" y1="124" x2="79" y2="154" />
+                      </g>
+                      <g fill="#fbbf24">
+                        <circle cx="60" cy="26" r="10" fill="none" stroke="#5eead4" stroke-width="3.4" />
+                        <circle cx="60" cy="50" r="3.4" />
+                        <circle cx="60" cy="86" r="3.4" />
+                        <circle cx="33" cy="72" r="3" />
+                        <circle cx="87" cy="72" r="3" />
+                        <circle cx="21" cy="98" r="3.6" />
+                        <circle cx="99" cy="98" r="3.6" />
+                        <circle cx="43" cy="124" r="3" />
+                        <circle cx="77" cy="124" r="3" />
+                        <circle cx="41" cy="154" r="3.4" />
+                        <circle cx="79" cy="154" r="3.4" />
+                      </g>
+                    </svg>
+                    <div class="text-white/70 font-bold text-[12px] mt-1">摄像头画面在这里</div>
                   </div>
                 </div>
                 <div class="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/40 text-white text-[11px] font-bold">

@@ -43,8 +43,38 @@ src/
 └── components/             GameCard / StarRow
 public/
 ├── models/pose_landmarker_lite.task   姿态模型（5.5MB / 5777746 字节，本地加载）
-└── wasm/                              MediaPipe wasm（本地加载，不依赖 CDN）
+├── wasm/                              MediaPipe wasm（本地加载，不依赖 CDN）
+├── icons/games/                       110 个游戏图标（OpenMoji 矢量，按 slug 命名）
+├── icons/items/                       道具贴图（地鼠/星星/礼物/球类等 25 个）
+├── bg/                                4 张场景装饰背景（garden/stadium/stage/space）
+└── sfx/                               12 个音效（Kenney CC0）
+scripts/
+├── fetch-icons.py                     批量拉取游戏图标（可重复执行，已存在的跳过）
+└── gen-bg.py                          生成场景装饰背景 SVG
 ```
+
+## 素材
+
+原站的美术资源有版权，这里全部换成开源素材 + 自制矢量，许可允许商用：
+
+| 用途 | 来源 | 许可 | 数量/体积 |
+| --- | --- | --- | --- |
+| 游戏图标（卡片、列表） | [OpenMoji](https://openmoji.org) | CC BY-SA 4.0 | 110 个 / 327KB |
+| 游戏内道具贴图 | OpenMoji | CC BY-SA 4.0 | 25 个 / 约 80KB |
+| 场景装饰背景 | 本项目脚本生成 | 随项目 | 4 张 / 26KB |
+| 音效 | [Kenney](https://kenney.nl) Interface Sounds + Music Jingles | CC0 | 12 个 / 132KB |
+| 背景音乐 | `audio.ts` WebAudio 实时合成 | 随项目 | 0 字节 |
+
+署名见 `public/icons/LICENSE.txt` 与 `public/sfx/LICENSE.txt`（CC BY-SA 要求署名，CC0 不要求但保留来源更清晰）。
+
+素材使用方式：
+
+- **图标**：`GameCard.vue` 直接 `<img src="/icons/games/<slug>.svg">`，替换 emoji 字体渲染，跨平台一致。
+- **道具**：`src/core/sprites.ts` 负责加载与绘制，`drawItem()` / `drawGameIcon()` 未就绪时返回 `false`，调用方自动回退到 canvas 矢量绘制，所以首次加载或素材缺失也不会白屏。
+- **背景**：每套玩法原型绑定一张（`games/index.ts` 的 `BG_BY_PROTO`），只画在画面上下边缘，中间透明，**不遮挡摄像头画面**。
+- **音效**：采样音效解码后播放，缺素材时回退到合成音；**BGM** 用振荡器现场合成 4 小节循环（C–Am–F–G，木琴旋律 + 低音 + 沙锤），避免几十 MB 的音乐文件。
+
+替换素材：保持文件名与 slug 一致即可，代码不用改。
 
 ## 体感引擎原理
 

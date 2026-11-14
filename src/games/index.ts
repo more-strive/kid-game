@@ -79,9 +79,28 @@ const ALIAS: Record<string, string> = {
   'dragon-boat': './proto/rhythm.ts',
 }
 
+/** 每个玩法原型配套的场景装饰背景 */
+const BG_BY_PROTO: Record<string, string> = {
+  './proto/whack.ts': 'garden',
+  './proto/catch.ts': 'garden',
+  './proto/rep.ts': 'stadium',
+  './proto/pose.ts': 'stage',
+  './proto/aim.ts': 'stadium',
+  './proto/rhythm.ts': 'stage',
+  './impl/freeze.ts': 'garden',
+  './impl/fruit-slash.ts': 'space',
+  './impl/balloon-keep.ts': 'garden',
+}
+
 function keyFor(slug: string) {
   if (impls[`./impl/${slug}.ts`]) return `./impl/${slug}.ts`
   return ALIAS[slug]
+}
+
+/** 该游戏用哪张场景装饰背景 */
+export function bgOf(slug: string) {
+  const key = keyFor(slug)
+  return (key && BG_BY_PROTO[key]) || 'garden'
 }
 
 export function hasImpl(slug: string) {
@@ -95,13 +114,16 @@ export function implCount() {
 export async function createGame(slug: string, ctx: GameContext): Promise<Game> {
   const key = keyFor(slug)
   const loader = key ? (impls[key] as undefined | (() => Promise<{ default: (c: GameContext) => Game }>)) : undefined
+  let game: Game | null = null
   if (loader) {
     try {
       const mod = await loader()
-      return mod.default(ctx)
+      game = mod.default(ctx)
     } catch (e) {
       console.error('[game] 加载失败，降级到通用玩法', slug, e)
     }
   }
-  return createGeneric(ctx)
+  if (!game) game = createGeneric(ctx)
+  if (!game.bg) game.bg = (key && BG_BY_PROTO[key]) || 'garden'
+  return game
 }

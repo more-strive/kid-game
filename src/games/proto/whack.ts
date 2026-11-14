@@ -1,9 +1,21 @@
 import { BaseGame } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, glow, outlineTxt, star, txt } from '@/core/draw'
+import { drawItem, preloadItems } from '@/core/sprites'
 
 /** 打击类原型：目标出现 → 用手打中 → 连击 */
 type TargetKind = 'mole' | 'bubble' | 'star' | 'pillow' | 'button' | 'flower'
+
+/** 每种目标对应的贴图素材 */
+const ITEM_OF: Record<TargetKind, string> = {
+  mole: 'mole',
+  /** 气泡没有合适的矢量素材，保留渐变自绘更像泡泡 */
+  bubble: '',
+  star: 'star',
+  pillow: 'pillow',
+  button: 'fist',
+  flower: 'flower',
+}
 
 interface Theme {
   kind: TargetKind
@@ -48,6 +60,7 @@ class WhackGame extends BaseGame implements Game {
   constructor(ctx: GameContext) {
     super(ctx)
     this.theme = THEMES[ctx.meta.slug] ?? { kind: 'mole', colors: ['#ffb703'], hitWord: '咚！', score: 12 }
+    preloadItems(['mole', 'bubble', 'star', 'pillow', 'flower', 'fist', 'bomb'])
     // 3x3 洞位
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
@@ -150,7 +163,14 @@ class WhackGame extends BaseGame implements Game {
     c.translate(t.x, t.y)
     c.scale(k, k)
     const bomb = t.color === '#3a3a4d'
-    glow(c, 0, 0, t.r * 1.9, t.color, 0.32)
+    glow(c, 0, 0, t.r * 1.9, bomb ? '#ff5c5c' : t.color, 0.32)
+
+    // 优先用道具贴图，未加载完成时退回矢量绘制
+    const pic = bomb ? 'bomb' : ITEM_OF[t.kind]
+    if (drawItem(c, pic, 0, 0, t.r * 2.15)) {
+      c.restore()
+      return
+    }
 
     if (bomb) {
       circle(c, 0, 0, t.r * 0.86, '#2b2b3d')

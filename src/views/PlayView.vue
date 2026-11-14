@@ -50,6 +50,8 @@ function resize() {
 async function start(demo = false) {
   if (!meta.value || !canvasRef.value || !videoRef.value) return
   audio.ensure()
+  audio.preload()
+  audio.click()
   showTip.value = false
   demoMode.value = demo
   const h = new GameHost(canvasRef.value, videoRef.value, meta.value)
@@ -68,6 +70,7 @@ async function start(demo = false) {
   host.value = h
   resize()
   await h.boot(demo)
+  if (!muted.value) audio.startBgm()
 }
 
 function restart() {
@@ -80,6 +83,7 @@ function restart() {
 }
 
 function goBack() {
+  audio.stopBgm()
   host.value?.destroy()
   host.value = null
   router.push(`/game/${route.params.slug}`)
@@ -120,6 +124,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resize)
   window.removeEventListener('keydown', onKey)
+  audio.stopBgm()
   host.value?.destroy()
   host.value = null
 })

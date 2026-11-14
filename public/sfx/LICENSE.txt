@@ -1,0 +1,25 @@
+音效素材
+========
+
+来源：Kenney（https://kenney.nl）
+- Interface Sounds（100 个 UI 音效）：https://kenney.nl/assets/interface-sounds
+- Music Jingles（85 个音乐片段）：https://kenney.nl/assets/music-jingles
+许可：CC0 1.0 Universal（公有领域，可商用、无需署名）
+      https://creativecommons.org/publicdomain/zero/1.0/
+
+本目录文件对应关系：
+  click.ogg    ← click_002
+  start.ogg    ← maximize_006
+  tick.ogg     ← tick_001
+  score.ogg    ← confirmation_002
+  combo.ogg    ← bong_001
+  miss.ogg     ← error_004
+  win.ogg      ← confirmation_004
+  pop.ogg      ← select_003
+  hit.ogg      ← glass_001
+  drop.ogg     ← drop_002
+  fanfare.ogg  ← music jingles: jingles_PIZZI06
+  result.ogg   ← music jingles: jingles_PIZZI12
+
+背景音乐（BGM）不含音频文件，由 src/core/audio.ts 用 WebAudio 实时合成
+（4 小节 C–Am–F–G 循环，木琴旋律 + 低音 + 沙锤），因此没有版权与体积负担。

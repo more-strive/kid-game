@@ -1,6 +1,23 @@
 import { BaseGame } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, glow, outlineTxt, ring, txt } from '@/core/draw'
+import { drawItem, preloadItems } from '@/core/sprites'
+
+/** 每个游戏用的球类素材 */
+const BALL_ITEM: Record<string, string> = {
+  hoops: 'basketball',
+  'soccer-kick': 'soccer',
+  goalkeeper: 'soccer',
+  darts: 'dart',
+  archery: 'dart',
+  bowling: 'bowling',
+  'air-pong': 'tennis',
+  tennis: 'tennis',
+  volley: 'volleyball',
+  shuttlecock: 'shuttlecock',
+  'frisbee-dog': 'frisbee',
+  aim: 'basketball',
+}
 
 /** 投掷/瞄准类原型：对准移动的目标，挥手把球投出去 */
 type TargetKind = 'hoop' | 'board' | 'pins' | 'goal' | 'net' | 'ring'
@@ -60,6 +77,7 @@ class AimGame extends BaseGame implements Game {
     super(ctx)
     this.theme = THEMES[ctx.meta.slug] ?? THEMES.aim
     this.target.speed = 210 + ctx.difficulty * 70
+    preloadItems(['basketball', 'soccer', 'dart', 'bowling', 'tennis', 'volleyball', 'shuttlecock', 'frisbee'])
   }
 
   tick(f: PoseFrame, dt: number) {
@@ -248,6 +266,11 @@ class AimGame extends BaseGame implements Game {
     c.save()
     c.translate(bl.x, bl.y)
     c.rotate(bl.spin)
+    const pic = BALL_ITEM[this.ctx.meta.slug]
+    if (pic && drawItem(c, pic, 0, 0, bl.r * 2.5)) {
+      c.restore()
+      return
+    }
     const kind = this.theme.ball
     if (kind === 'basketball' || kind === 'football') {
       circle(c, 0, 0, bl.r, kind === 'basketball' ? '#ff8a3d' : '#ffffff')
@@ -294,13 +317,13 @@ class AimGame extends BaseGame implements Game {
     this.drawTarget(c)
     for (const bl of this.balls) this.drawBall(c, bl)
 
-    // 命中率
+    // 命中数与命中率
     const acc = this.throws ? Math.round((this.hits / this.throws) * 100) : 0
     c.fillStyle = 'rgba(10,14,40,.4)'
     c.beginPath()
-    c.roundRect(24, 24, 190, 52, 26)
+    c.roundRect(24, 24, 200, 52, 26)
     c.fill()
-    outlineTxt(c, `命中 ${this.hits}`, 119, 50, 26, '#ffd54a')
+    outlineTxt(c, `命中 ${this.hits}${this.throws > 3 ? ` · ${acc}%` : ''}`, 124, 50, 24, '#ffd54a')
 
     if (this.combo >= 2) {
       c.fillStyle = 'rgba(10,14,40,.42)'
@@ -325,9 +348,6 @@ class AimGame extends BaseGame implements Game {
       'center',
       'bold',
     )
-    if (acc && this.throws > 3) {
-      txt(c, `命中率 ${acc}%`, 119, 110, 13, 'rgba(255,255,255,.85)', 'center', 'bold')
-    }
   }
 }
 

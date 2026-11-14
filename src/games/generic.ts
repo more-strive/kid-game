@@ -1,6 +1,7 @@
 import { BaseGame } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, glow, outlineTxt, ring, starPath, txt } from '@/core/draw'
+import { drawGameIcon, drawItem } from '@/core/sprites'
 
 type Mode = 'catch' | 'hit' | 'jump' | 'pose'
 
@@ -246,12 +247,16 @@ class GenericGame extends BaseGame implements Game {
       c.rotate(it.rot)
       if (it.ch === '💣') {
         glow(c, 0, 0, 70, '#ff5252', 0.5)
-        circle(c, 0, 0, it.r, '#2b2b3d')
-        txt(c, '💣', 0, 2, it.r * 1.5)
+        if (!drawItem(c, 'bomb', 0, 0, it.r * 2.3)) {
+          circle(c, 0, 0, it.r, '#2b2b3d')
+          txt(c, '💣', 0, 2, it.r * 1.5)
+        }
       } else {
         glow(c, 0, 0, it.r * 2.2, it.color, 0.35)
-        circle(c, 0, 0, it.r, 'rgba(255,255,255,.92)')
-        txt(c, it.ch, 0, 3, it.r * 1.5)
+        if (!drawGameIcon(c, this.ctx.meta.slug, 0, 0, it.r * 2.3)) {
+          circle(c, 0, 0, it.r, 'rgba(255,255,255,.92)')
+          txt(c, it.ch, 0, 3, it.r * 1.5)
+        }
       }
       c.restore()
     }

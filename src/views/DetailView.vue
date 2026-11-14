@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { GAMES, GAME_MAP } from '@/data/games'
-import { hasImpl } from '@/games'
+import { bgOf, hasImpl } from '@/games'
 import GameCard from '@/components/GameCard.vue'
 
 const route = useRoute()
@@ -31,10 +31,15 @@ const energyText = computed(() =>
       <div>
         <div class="flex items-start gap-5">
           <div
-            class="w-[92px] h-[92px] rounded-3xl grid place-items-center text-5xl shrink-0 shadow-lg"
+            class="w-[92px] h-[92px] rounded-3xl grid place-items-center shrink-0 shadow-lg bg-white/80"
             :style="{ background: `linear-gradient(135deg, ${game.color}33, ${game.color}0d)` }"
           >
-            {{ game.emoji }}
+            <img
+              :src="`/icons/games/${game.slug}.svg`"
+              :alt="game.name"
+              class="w-[62px] h-[62px] select-none"
+              draggable="false"
+            />
           </div>
           <div>
             <h1 class="text-[38px] leading-tight font-black tracking-tight">{{ game.name }}</h1>
@@ -134,6 +139,27 @@ const energyText = computed(() =>
           </RouterLink>
           <div class="mt-4 text-[12px] text-slate-400 leading-relaxed">
             第一次玩建议先允许摄像头权限，站远一点让全身进画面。中途可以按空格暂停。
+          </div>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="relative h-[168px]" style="background: linear-gradient(180deg, #dceeff, #f6fbff)">
+            <img
+              :src="`/bg/${bgOf(game.slug)}.svg`"
+              class="absolute inset-0 w-full h-full object-cover"
+              alt=""
+              draggable="false"
+            />
+            <img
+              :src="`/icons/games/${game.slug}.svg`"
+              :alt="game.name"
+              class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[76px] h-[76px] drop-shadow-[0_10px_18px_rgba(24,44,110,.22)]"
+              draggable="false"
+            />
+          </div>
+          <div class="px-4 py-3">
+            <div class="font-black text-[13px] text-slate-700">游戏画面示意</div>
+            <div class="text-[12px] text-slate-400 mt-0.5">实际画面里，场景会叠加摄像头实时影像</div>
           </div>
         </div>
       </aside>

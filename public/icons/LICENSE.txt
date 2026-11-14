@@ -1,0 +1,16 @@
+游戏图标与道具素材
+==================
+
+来源：OpenMoji（https://openmoji.org）
+作者：HfG Schwäbisch Gmünd — Design by Benedikt Groß, Daniel Utz, Karthik Pasupathy Ramaswamy 等
+许可：Creative Commons Attribution-ShareAlike 4.0 International（CC BY-SA 4.0）
+      https://creativecommons.org/licenses/by-sa/4.0/
+
+本目录下的 SVG：
+- games/  110 个，对应 src/data/games.ts 中每个游戏的 slug
+- items/  道具贴图（地鼠、星星、礼物、球类等），供 canvas 内绘制使用
+
+使用方式：本地打包，运行时通过 <img> 或 canvas drawImage 读取，未对图形本身做修改
+（仅在渲染时缩放、旋转、着色光晕）。
+
+如需替换为其他图标集，保持文件名与 slug 一致即可，代码无需改动。

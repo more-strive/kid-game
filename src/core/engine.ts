@@ -46,6 +46,9 @@ export class GameHost {
   private duration = 60
   private hudT = 0
   private sim = false
+  private bgKey = ''
+  private bgImg: HTMLImageElement | null = null
+  private bgReady = false
 
   constructor(canvas: HTMLCanvasElement, video: HTMLVideoElement, meta: GameMeta) {
     this.canvas = canvas
@@ -58,6 +61,26 @@ export class GameHost {
   private setState(s: HostState) {
     this.state = s
     this.hooks.onState?.(s)
+  }
+
+  /** 加载场景装饰背景（SVG，仅在上下边缘作画，不遮摄像头） */
+  private setBackground(key: string) {
+    if (!key || this.bgKey === key) return
+    this.bgKey = key
+    this.bgReady = false
+    const img = new Image()
+    const base = import.meta.env.BASE_URL || '/'
+    img.onload = () => {
+      if (this.bgKey !== key) return
+      this.bgImg = img
+      this.bgReady = true
+    }
+    img.src = `${base}bg/${key}.svg`
+  }
+
+  private paintSceneBg(c: CanvasRenderingContext2D) {
+    if (!this.bgReady || !this.bgImg) return
+    c.drawImage(this.bgImg, 0, 0, W, H)
   }
 
   private emitHud(force = false) {
@@ -126,6 +149,7 @@ export class GameHost {
       finish: () => this.finish(),
     }
     this.game = await createGame(this.meta.slug, ctx)
+    if (this.game?.bg) this.setBackground(this.game.bg)
     this.hud.score = 0
     this.hud.combo = 0
     this.hud.stage = ''
@@ -156,6 +180,7 @@ export class GameHost {
     const k = this.canvas.width / W
     c.setTransform(k, 0, 0, k, 0, 0)
     if (this.sim) this.paintSimBg(c)
+    this.paintSceneBg(c)
 
     if (this.state === 'countdown') {
       const frame = tracker.detect(now)
@@ -224,30 +249,14 @@ export class GameHost {
     }
   }
 
+  /** 演示模式的底色：只有天空渐变，场景元素交给装饰背景 */
   private paintSimBg(c: CanvasRenderingContext2D) {
     const g = c.createLinearGradient(0, 0, 0, H)
     g.addColorStop(0, '#cfe6ff')
     g.addColorStop(0.55, '#eaf4ff')
-    g.addColorStop(0.56, '#d8f0d4')
-    g.addColorStop(1, '#bfe6b5')
+    g.addColorStop(1, '#eef7ff')
     c.fillStyle = g
     c.fillRect(0, 0, W, H)
-    // 远处的小山和云
-    c.fillStyle = 'rgba(255,255,255,.75)'
-    for (const [x, y, r] of [[180, 120, 46], [230, 120, 60], [280, 120, 40], [980, 90, 38], [1030, 90, 52], [1080, 90, 34]]) {
-      c.beginPath()
-      c.arc(x, y, r, 0, Math.PI * 2)
-      c.fill()
-    }
-    c.fillStyle = 'rgba(120,190,120,.35)'
-    c.beginPath()
-    c.moveTo(0, 430)
-    c.quadraticCurveTo(320, 330, 640, 420)
-    c.quadraticCurveTo(960, 500, 1280, 390)
-    c.lineTo(1280, 720)
-    c.lineTo(0, 720)
-    c.closePath()
-    c.fill()
   }
 
   private drawSimBody(c: CanvasRenderingContext2D, frame: ReturnType<typeof tracker.detect>) {
@@ -352,11 +361,11 @@ export class GameHost {
     const stars = this.calcStars()
     this.hud.stars = stars
     audio.setVoice(true)
+    audio.stopBgm()
+    audio.result(stars)
     if (stars >= 3) {
-      audio.win()
       audio.speak('太棒了，三颗星')
     } else if (stars >= 2) {
-      audio.good()
       audio.speak('不错哦，两颗星')
     } else {
       audio.speak('完成啦，再试一次吧')

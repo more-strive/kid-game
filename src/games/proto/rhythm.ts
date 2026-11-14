@@ -1,6 +1,7 @@
 import { BaseGame } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
-import { glow, outlineTxt, rr, txt } from '@/core/draw'
+import { circle, glow, outlineTxt, rr, txt } from '@/core/draw'
+import { drawItem, preloadItems } from '@/core/sprites'
 
 /** 节奏类原型：音符落到判定线，用手/脚在对应位置打中 */
 interface Theme {
@@ -54,6 +55,7 @@ class RhythmGame extends BaseGame implements Game {
   constructor(ctx: GameContext) {
     super(ctx)
     this.theme = THEMES[ctx.meta.slug] ?? THEMES.rhythm
+    preloadItems(['note'])
     const n = this.theme.lanes
     const span = 780
     const start = this.W / 2 - span / 2
@@ -168,10 +170,19 @@ class RhythmGame extends BaseGame implements Game {
     // 音符
     for (const nt of this.notes) {
       const x = this.laneX[nt.lane]
-      glow(c, x, nt.y, 60, nt.color, 0.4)
-      rr(c, x - 52, nt.y - 16, 104, 32, 16)
-      c.fillStyle = nt.color
-      c.fill()
+      glow(c, x, nt.y, 64, nt.color, 0.42)
+      // 白底 + 音符图标，像乐谱上的音符
+      circle(c, x, nt.y, 27, 'rgba(255,255,255,.95)')
+      c.strokeStyle = nt.color
+      c.lineWidth = 4
+      c.beginPath()
+      c.arc(x, nt.y, 27, 0, Math.PI * 2)
+      c.stroke()
+      if (!drawItem(c, 'note', x, nt.y, 40)) {
+        rr(c, x - 14, nt.y - 3, 28, 6, 3)
+        c.fillStyle = nt.color
+        c.fill()
+      }
     }
 
     // 打击区

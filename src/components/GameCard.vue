@@ -8,6 +8,8 @@ const props = defineProps<{ game: GameMeta; index?: number }>()
 
 const energyDots = computed(() => '⚡'.repeat(props.game.energy))
 const built = computed(() => hasImpl(props.game.slug))
+// 子路径部署（/kid-game/）时图标也要带 base，否则 404
+const iconUrl = (slug: string) => `${import.meta.env.BASE_URL}icons/games/${slug}.svg`
 </script>
 
 <template>
@@ -27,9 +29,17 @@ const built = computed(() => hasImpl(props.game.slug))
         class="absolute -left-8 -bottom-10 w-28 h-28 rounded-full opacity-10"
         :style="{ background: game.color }"
       />
-      <span class="text-5xl drop-shadow-sm group-hover:scale-110 transition duration-300">{{
-        game.emoji
-      }}</span>
+      <div
+        class="relative w-[76px] h-[76px] rounded-[22px] grid place-items-center bg-white/70 shadow-[0_6px_16px_-8px_rgba(24,44,110,.35)] group-hover:scale-110 group-hover:-rotate-3 transition duration-300"
+      >
+        <img
+          :src="iconUrl(game.slug)"
+          :alt="game.name"
+          class="w-[52px] h-[52px] select-none pointer-events-none"
+          loading="lazy"
+          draggable="false"
+        />
+      </div>
       <span
         v-if="built"
         class="absolute top-2.5 right-2.5 text-[10px] font-black px-2 py-0.5 rounded-full text-white shadow"
