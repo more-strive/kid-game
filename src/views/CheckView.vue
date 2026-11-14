@@ -106,8 +106,12 @@ async function start() {
     loop()
     setInterval(measureBrightness, 900)
   } catch (e: any) {
-    errorMsg.value =
-      e?.name === 'NotAllowedError' ? '你拒绝了摄像头权限，请在地址栏重新允许' : `打不开摄像头：${e?.message || e}`
+    const m = String(e?.message ?? e)
+    errorMsg.value = m.includes('姿态模型')
+      ? m
+      : e?.name === 'NotAllowedError'
+        ? '你拒绝了摄像头权限，请在地址栏重新允许'
+        : `打不开摄像头：${m}`
   } finally {
     loading.value = false
   }

@@ -4,6 +4,8 @@
 
 技术栈：**Vite + Vue 3 + TypeScript + Element Plus + UnoCSS**，姿态识别用 **MediaPipe Tasks Vision**（Pose Landmarker，本地 wasm）。
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ## 快速开始
 
 ```bash
@@ -40,7 +42,7 @@ src/
 ├── views/                  Home / Games / Detail / Play / Check
 └── components/             GameCard / StarRow
 public/
-├── models/pose_landmarker_lite.task   姿态模型（4.7MB，本地加载）
+├── models/pose_landmarker_lite.task   姿态模型（5.5MB / 5777746 字节，本地加载）
 └── wasm/                              MediaPipe wasm（本地加载，不依赖 CDN）
 ```
 
@@ -94,6 +96,16 @@ public/
 
 ## 已知限制
 
-- 摄像头画面只在本机推理，不上传；首次进入需加载 4.7MB 模型（已放 `public/models`，离线可用）。
+- 摄像头画面只在本机推理，不上传；首次进入需加载 5.5MB 模型（已放 `public/models`，离线可用）。
 - 少数游戏（吹蜡烛、吹蒲公英、悄悄话大声喊、音高爬梯）在原站需要麦克风，此版本暂用动作替代，未接麦克风输入。
 - 拿星分数线沿用原站数值，但玩法参数（生成速度、目标大小）与原站不完全一致，手感需按实际试玩再调。
+
+## 开源协议
+
+本项目代码以 [MIT License](LICENSE) 开源，Copyright © 2026 Nevermore。
+
+第三方资源遵循各自协议：
+
+- **MediaPipe Tasks Vision**（`@mediapipe/tasks-vision`、`public/wasm/`、`public/models/pose_landmarker_lite.task`）：Apache-2.0，Google
+- 其余 npm 依赖见 `package.json`，协议以各自包内 LICENSE 为准
+- `src/data/games.ts` 的游戏元数据整理自 [dongdongpark.com](https://dongdongpark.com) 公开页面，仅用于玩法对齐与学习研究，内容版权归原站所有

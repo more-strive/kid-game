@@ -71,7 +71,14 @@ export class PoseTracker {
     })
     try {
       this.landmarker = await PoseLandmarker.createFromOptions(fileset, opts('GPU'))
-    } catch {
+    } catch (e: any) {
+      // 模型文件损坏（未下载完整 / 被截断）时，换 CPU 也救不回来，直接给可读的提示
+      const raw = String(e?.message ?? e)
+      if (/zip archive|Initialize was not ok|StartGraph failed/i.test(raw)) {
+        throw new Error(
+          '姿态模型文件损坏（多半是下载不完整），请重新下载 public/models/pose_landmarker_lite.task',
+        )
+      }
       this.landmarker = await PoseLandmarker.createFromOptions(fileset, opts('CPU'))
     }
     this.ready = true
