@@ -208,7 +208,7 @@ export class Particles {
   }
 }
 
-/** 手部光标：糖果色光点 + 拖尾 */
+/** 手部光标：一个圆环（trail 数据保留，供切水果等玩法做轨迹判定） */
 export class Cursor {
   x: number
   y: number
@@ -232,15 +232,10 @@ export class Cursor {
 
   draw(c: C2D) {
     if (!this.active) return
-    for (let i = 0; i < this.trail.length; i++) {
-      const t = this.trail[i]
-      const k = (i + 1) / this.trail.length
-      c.globalAlpha = k * 0.35
-      circle(c, t.x, t.y, 22 * k, this.color)
-    }
-    c.globalAlpha = 1
-    glow(c, this.x, this.y, 52, this.color, 0.55)
-    circle(c, this.x, this.y, 15, '#fff')
-    circle(c, this.x, this.y, 9, this.color)
+    c.beginPath()
+    c.arc(this.x, this.y, 34, 0, Math.PI * 2)
+    c.strokeStyle = 'rgba(255,255,255,.95)'
+    c.lineWidth = 6
+    c.stroke()
   }
 }

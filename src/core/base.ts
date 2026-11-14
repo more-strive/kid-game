@@ -94,6 +94,11 @@ export abstract class BaseGame implements Game {
   draw(c: CanvasRenderingContext2D) {
     this.paint(c)
     this.particles.draw(c)
+    // 手部光标画在最上层，玩家随时能看到自己的手在哪（没检测到人时自动隐藏）
+    for (const pv of this.players) {
+      pv.lHand.draw(c)
+      pv.rHand.draw(c)
+    }
     for (const w of this.words) {
       c.globalAlpha = Math.min(1, w.life / w.max)
       c.font = `900 ${w.size}px "PingFang SC","Microsoft YaHei",system-ui,sans-serif`
