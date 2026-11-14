@@ -19,6 +19,11 @@ const similar = computed(() => {
 const energyText = computed(() =>
   game.value ? ['轻松', '中等', '出汗'][game.value.energy - 1] : '',
 )
+
+// 子路径部署时资源路径要带 base
+const base = import.meta.env.BASE_URL
+const iconUrl = (slug: string) => `${base}icons/games/${slug}.svg`
+const bgUrl = (slug: string) => `${base}bg/${bgOf(slug)}.svg`
 </script>
 
 <template>
@@ -35,7 +40,7 @@ const energyText = computed(() =>
             :style="{ background: `linear-gradient(135deg, ${game.color}33, ${game.color}0d)` }"
           >
             <img
-              :src="`/icons/games/${game.slug}.svg`"
+              :src="iconUrl(game.slug)"
               :alt="game.name"
               class="w-[62px] h-[62px] select-none"
               draggable="false"
@@ -145,13 +150,13 @@ const energyText = computed(() =>
         <div class="card overflow-hidden">
           <div class="relative h-[168px]" style="background: linear-gradient(180deg, #dceeff, #f6fbff)">
             <img
-              :src="`/bg/${bgOf(game.slug)}.svg`"
+              :src="bgUrl(game.slug)"
               class="absolute inset-0 w-full h-full object-cover"
               alt=""
               draggable="false"
             />
             <img
-              :src="`/icons/games/${game.slug}.svg`"
+              :src="iconUrl(game.slug)"
               :alt="game.name"
               class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[76px] h-[76px] drop-shadow-[0_10px_18px_rgba(24,44,110,.22)]"
               draggable="false"
