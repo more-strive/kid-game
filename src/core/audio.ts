@@ -357,6 +357,25 @@ export class AudioKit {
     }
   }
 
+  /** 英文播报（英语摸摸看这类听力游戏用），与 speak 共用静音/语音开关 */
+  speakEn(text: string, rate = 1) {
+    if (this.muted || !this.voiceOn) return
+    const synth = window.speechSynthesis
+    if (!synth) return
+    try {
+      synth.cancel()
+      const u = new SpeechSynthesisUtterance(text)
+      u.lang = 'en-US'
+      u.rate = rate
+      u.pitch = 1.05
+      const v = synth.getVoices().find((x) => /^en[-_]/i.test(x.lang))
+      if (v) u.voice = v
+      synth.speak(u)
+    } catch {
+      /* ignore */
+    }
+  }
+
   setVoice(on: boolean) {
     this.voiceOn = on
   }

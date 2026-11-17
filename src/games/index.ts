@@ -38,7 +38,9 @@ export function hasImpl(slug: string) {
 }
 
 export function implCount() {
-  return Object.keys(ALIAS).length + Object.keys(impls).filter((k) => k.startsWith('./impl/')).length
+  // counter-kit.ts 是计数类游戏共用的检测器，不是游戏本体
+  const games = Object.keys(impls).filter((k) => k.startsWith('./impl/') && !k.endsWith('/counter-kit.ts'))
+  return Object.keys(ALIAS).length + games.length
 }
 
 export async function createGame(slug: string, ctx: GameContext): Promise<Game> {

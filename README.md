@@ -1,6 +1,6 @@
 # 动动乐园 · 复刻版
 
-用电脑摄像头玩的儿童体感游戏合集，复刻 [dongdongpark.com](https://dongdongpark.com) 的 **110 个游戏**，玩法规则与难度参数按原站真实规则逆向对齐（65 个专属实现 + 4 个原型复用 + 41 个通用兜底）。
+用电脑摄像头玩的儿童体感游戏合集，复刻 [dongdongpark.com](https://dongdongpark.com) 的 **110 个游戏**，玩法规则与难度参数按原站真实规则逆向对齐（80 个专属实现 + 4 个原型复用 + 26 个通用兜底）。
 
 技术栈：**Vite + Vue 3 + TypeScript + Element Plus + UnoCSS**，姿态识别用 **MediaPipe Tasks Vision**（Pose Landmarker，本地 wasm）。
 
@@ -38,8 +38,8 @@ src/
 │   └── types.ts            Body / PoseFrame / Game / GameContext
 ├── games/
 │   ├── index.ts            注册表：slug → 实现（专属 or 原型），并按实现绑定场景背景
-│   ├── generic.ts          通用玩法（剩余 41 个未专门实现的游戏用它兜底）
-│   ├── impl/               65 个游戏的专属实现 + counter-kit.ts（计数类共用检测器）
+│   ├── generic.ts          通用玩法（剩余 26 个未专门实现的游戏用它兜底）
+│   ├── impl/               80 个游戏的专属实现 + counter-kit.ts（计数类共用检测器）
 │   └── proto/              玩法原型引擎：whack（打地鼠）/ catch（接礼物·算一算·拼字）
 ├── data/games.ts           110 个游戏的元数据（名称/玩法/年龄/运动量/类型/时长/拿星线）
 ├── router/                 路由：/ 、/games 、/game/:slug 、/play/:slug 、/check
@@ -104,9 +104,9 @@ scripts/
 
 | 实现方式 | 数量 | 说明 |
 | --- | --- | --- |
-| 专属实现 `impl/` | 65 | 每个游戏一套独立规则，数值按原站逆向结果对齐 |
+| 专属实现 `impl/` | 80 | 每个游戏一套独立规则，数值按原站逆向结果对齐 |
 | 玩法原型 `proto/` | 4 | 打地鼠走 `whack.ts`；圣诞接礼物、算一算、拼字接接乐走 `catch.ts` |
-| 通用兜底 `generic.ts` | 41 | 按玩法类型自动选「接/打/跳/摆」原型，保证能玩 |
+| 通用兜底 `generic.ts` | 26 | 按玩法类型自动选「接/打/跳/摆」原型，保证能玩 |
 
 `src/games/impl/counter-kit.ts` 不是游戏，是计数类游戏（跳绳/深蹲/高抬腿/开合跳/体能闯关/砍木头等）共用的检测器，移植自原站 counter 引擎。
 
