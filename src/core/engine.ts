@@ -118,6 +118,7 @@ export class GameHost {
   }
 
   async startRound() {
+    const host = this
     const ctx: GameContext = {
       w: W,
       h: H,
@@ -147,6 +148,11 @@ export class GameHost {
       },
       speak: (t) => audio.speak(t),
       finish: () => this.finish(),
+      // 站点宿主黑盒的 e.heat / ctx.heat：这里按局内进度线性 0→1（倒数计时局），
+      // 与 frisbee-dog / reaction-lights 等已实装游戏的局内代理同口径；无时长局恒 0。
+      get heat() {
+        return host.duration > 0 ? Math.min(1, host.elapsed / host.duration) : 0
+      },
     }
     this.game = await createGame(this.meta.slug, ctx)
     if (this.game?.bg) this.setBackground(this.game.bg)

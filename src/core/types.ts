@@ -83,6 +83,8 @@ export interface GameContext {
   finish(): void
   /** 难度档位 0/1/2，对应拿星标准的三个档 */
   difficulty: number
+  /** 局内热力 0~1：随游戏时长线性爬升（站点由宿主黑盒维护，按「局内进度」推断口径对齐） */
+  readonly heat: number
 }
 
 export interface Game {
