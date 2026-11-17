@@ -120,6 +120,59 @@ export function glow(c: C2D, x: number, y: number, r: number, color: string, alp
   c.globalAlpha = 1
 }
 
+/** BlazePose 33 骨架连线（躯干/四肢/手足，不含脸） */
+const SKELETON: [number, number][] = [
+  [11, 12], [11, 23], [12, 24], [23, 24],
+  [11, 13], [13, 15], [12, 14], [14, 16],
+  [15, 17], [17, 19], [19, 21], [16, 18], [18, 20], [20, 22],
+  [23, 25], [25, 27], [27, 29], [29, 31], [27, 31],
+  [24, 26], [26, 28], [28, 30], [30, 32], [28, 32],
+]
+
+/**
+ * 骨架描画（对齐站点 draw 模块的骨架叠加）：关节点 + 连线，
+ * 只画可见度达标的点，颜色按玩家区分。画在摄像头画面之上、游戏元素之下。
+ */
+export function drawSkeleton(
+  c: C2D,
+  lm: { x: number; y: number; visibility?: number }[],
+  w: number,
+  h: number,
+  color: string,
+  alpha = 0.55,
+) {
+  const ok = (i: number) => lm[i] && (lm[i].visibility ?? 1) >= 0.5
+  const px = (i: number) => lm[i].x * w
+  const py = (i: number) => lm[i].y * h
+  c.save()
+  c.globalAlpha = alpha
+  c.strokeStyle = color
+  c.lineCap = 'round'
+  c.lineJoin = 'round'
+  for (const [a, b] of SKELETON) {
+    if (!ok(a) || !ok(b)) continue
+    c.lineWidth = 5
+    c.beginPath()
+    c.moveTo(px(a), py(a))
+    c.lineTo(px(b), py(b))
+    c.stroke()
+  }
+  c.fillStyle = color
+  for (let i = 11; i < lm.length; i++) {
+    if (!ok(i)) continue
+    c.beginPath()
+    c.arc(px(i), py(i), 4.5, 0, Math.PI * 2)
+    c.fill()
+  }
+  // 头部：鼻子单点提示（真实头圆由游戏按需绘制）
+  if (ok(0)) {
+    c.beginPath()
+    c.arc(px(0), py(0), 6, 0, Math.PI * 2)
+    c.fill()
+  }
+  c.restore()
+}
+
 interface P {
   x: number
   y: number
@@ -232,10 +285,15 @@ export class Cursor {
 
   draw(c: C2D) {
     if (!this.active) return
+    // 对齐站点：没有全局大白圆，只留一个小巧的手位提示圈
     c.beginPath()
-    c.arc(this.x, this.y, 34, 0, Math.PI * 2)
-    c.strokeStyle = 'rgba(255,255,255,.95)'
-    c.lineWidth = 6
+    c.arc(this.x, this.y, 20, 0, Math.PI * 2)
+    c.strokeStyle = 'rgba(255,255,255,.55)'
+    c.lineWidth = 4
     c.stroke()
+    c.beginPath()
+    c.arc(this.x, this.y, 6, 0, Math.PI * 2)
+    c.fillStyle = this.color
+    c.fill()
   }
 }

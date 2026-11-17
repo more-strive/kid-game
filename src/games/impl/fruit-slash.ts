@@ -2,26 +2,43 @@ import { BaseGame, segHit } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { glow, outlineTxt, ring, txt } from '@/core/draw'
 
-type Kind = 'round' | 'oval' | 'crescent' | 'cluster'
+type Kind = 'round' | 'oval' | 'crescent'
 
 interface FruitType {
+  name: string
   color: string
   color2: string
   flesh: string
   kind: Kind
   leaf: boolean
+  points: number
+  /** 果汁量 0~1：影响切开的粒子数与滴汁频率（对齐站点 per-fruit wet 值） */
+  juice: number
 }
 
+/** 对齐站点真实水果表：苹果/橙子 3 分、猕猴桃 4 分、西瓜 5 分；冰冻香蕉单独处理 */
 const FRUITS: FruitType[] = [
-  { color: '#ff4d6d', color2: '#c9184a', flesh: '#fff1ec', kind: 'round', leaf: true },      // 苹果
-  { color: '#ff9f1c', color2: '#e85d04', flesh: '#ffc98a', kind: 'round', leaf: false },     // 橙子
-  { color: '#ffd166', color2: '#f5a623', flesh: '#fff7c2', kind: 'oval', leaf: false },      // 柠檬
-  { color: '#9b5de5', color2: '#6a2fb5', flesh: '#e8d9ff', kind: 'cluster', leaf: true },    // 葡萄
-  { color: '#7bc950', color2: '#3f8f22', flesh: '#f0ffe0', kind: 'round', leaf: true },      // 青苹果
-  { color: '#ff8fa3', color2: '#e5537a', flesh: '#ffe3e9', kind: 'round', leaf: true },      // 桃子
-  { color: '#ffe066', color2: '#e8b800', flesh: '#fff5cf', kind: 'crescent', leaf: false },  // 香蕉
-  { color: '#66d9a3', color2: '#2f9e6b', flesh: '#dff7ec', kind: 'oval', leaf: false },      // 猕猴桃
+  { name: '苹果', color: '#ff4d6d', color2: '#c9184a', flesh: '#fff6dc', kind: 'round', leaf: true, points: 3, juice: 0.4 },
+  { name: '橙子', color: '#ff9f1c', color2: '#e85d04', flesh: '#ffd27a', kind: 'round', leaf: false, points: 3, juice: 1 },
+  { name: '西瓜', color: '#3f8f22', color2: '#1e6e18', flesh: '#ff6b81', kind: 'round', leaf: false, points: 5, juice: 1 },
+  { name: '香蕉', color: '#ffd166', color2: '#e8b800', flesh: '#fff3b0', kind: 'crescent', leaf: false, points: 3, juice: 0.12 },
+  { name: '猕猴桃', color: '#8a7a4e', color2: '#6b5d38', flesh: '#9ad66b', kind: 'oval', leaf: false, points: 4, juice: 0.85 },
 ]
+const ICE: FruitType = { name: '冰冻香蕉', color: '#8fd3ff', color2: '#5db6e8', flesh: '#e6f7ff', kind: 'crescent', leaf: false, points: 3, juice: 0.2 }
+
+/** 对齐站点真实难度表：投掷间隔 / 每波数量 / 手速门槛 / 炸弹率 / 冰冻率 / 半径 / 滞空秒数 */
+const DIFF = [
+  { every: 2.3, burst: [1, 2], minSpeed: 0.35, bomb: 0.07, ice: 0.07, r: 62, hang: 2.1 },
+  { every: 2.0, burst: [1, 3], minSpeed: 0.5, bomb: 0.13, ice: 0.06, r: 54, hang: 1.9 },
+  { every: 1.6, burst: [2, 4], minSpeed: 0.6, bomb: 0.2, ice: 0.05, r: 46, hang: 1.7 },
+]
+
+const COMBO_WIN = 0.35 // 连击时间窗：窗内连切 ≥2 个，结束时奖励 n×3（对齐站点）
+const SLOW_T = 3.2 // 冰冻慢动作时长（秒）
+const SLOW_K = 0.45 // 慢动作全局时间流速
+const RECUT_MIN = 0.12 // 补刀最早：切开后 0.12s 内不可再切
+const RECUT_MAX = 2.2 // 补刀最晚：块龄超过 2.2s 不可再切
+const HAND_R = 16 // 手部判定半径
 
 /** 一个切面：a 是切线在水果局部坐标里的角度，s 表示保留哪一侧（1 保留 y>0，-1 保留 y<0） */
 interface Clip {
@@ -34,6 +51,8 @@ interface Fruit {
   y: number
   vx: number
   vy: number
+  /** 该水果自己的重力（由滞空时长反推，对齐站点 per-difficulty hang） */
+  g0: number
   r: number
   fullR: number
   type: FruitType
@@ -42,12 +61,25 @@ interface Fruit {
   alive: boolean
   bomb: boolean
   life: number
+  /** 0=整果 1=半块 2=小块；≥2 不可再切 */
   gen: number
   clips: Clip[]
-  immune: number
+  /** 创建这块的刀的 stroke id；补刀必须换刀（不同 stroke） */
+  stroke: number
+  /** 出生后的块龄（秒），补刀窗口用 */
+  age: number
+  /** 湿度：>0 时空中滴汁并指数衰减 */
+  wet: number
+  dripT: number
+  /** 归属玩家：只能切自己那波（对齐站点 owner 隔离） */
+  owner: number
 }
 
-const G = 1500
+/** 单只手的挥刀状态：方向反转（点积 < 0）或停手后重新挥动 → 新的一刀 */
+interface StrokeState {
+  dir: { x: number; y: number } | null
+  id: number
+}
 
 function drawFruit(c: CanvasRenderingContext2D, r: number, t: FruitType) {
   const g = c.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.15, 0, 0, r)
@@ -61,24 +93,11 @@ function drawFruit(c: CanvasRenderingContext2D, r: number, t: FruitType) {
     c.closePath()
     c.fillStyle = g
     c.fill()
-    return
-  }
-
-  if (t.kind === 'cluster') {
-    const pts: [number, number, number][] = [
-      [-r * 0.4, -r * 0.1, r * 0.42],
-      [r * 0.36, -r * 0.2, r * 0.4],
-      [0, -r * 0.45, r * 0.42],
-      [-r * 0.18, r * 0.35, r * 0.46],
-      [r * 0.3, r * 0.28, r * 0.4],
-    ]
-    for (const [x, y, rr] of pts) {
-      const gg = c.createRadialGradient(x - rr * 0.3, y - rr * 0.3, rr * 0.1, x, y, rr)
-      gg.addColorStop(0, t.color)
-      gg.addColorStop(1, t.color2)
+    if (t === ICE) {
+      // 冰冻香蕉：加一点雪花高光
+      c.fillStyle = 'rgba(255,255,255,.8)'
       c.beginPath()
-      c.arc(x, y, rr, 0, Math.PI * 2)
-      c.fillStyle = gg
+      c.arc(-r * 0.1, -r * 0.75, r * 0.14, 0, Math.PI * 2)
       c.fill()
     }
     return
@@ -91,10 +110,21 @@ function drawFruit(c: CanvasRenderingContext2D, r: number, t: FruitType) {
   c.fillStyle = g
   c.fill()
 
+  // 西瓜条纹
+  if (t.name === '西瓜') {
+    c.strokeStyle = '#1e6e18'
+    c.lineWidth = r * 0.09
+    for (const k of [-0.55, 0, 0.55]) {
+      c.beginPath()
+      c.ellipse(k * r, 0, r * 0.16, ry * 0.92, 0, 0, Math.PI * 2)
+      c.stroke()
+    }
+  }
+
   // 高光
   c.beginPath()
   c.ellipse(-rx * 0.34, -ry * 0.36, rx * 0.22, ry * 0.16, -0.6, 0, Math.PI * 2)
-  c.fillStyle = 'rgba(255,255,255,.55)'
+  c.fillStyle = 'rgba(255,255,255,.5)'
   c.fill()
 
   // 叶子/梗
@@ -181,154 +211,412 @@ function drawBomb(c: CanvasRenderingContext2D, r: number, t: number) {
 class FruitSlash extends BaseGame implements Game {
   fruits: Fruit[] = []
   score = 0
-  combo = 0
+  cfg = DIFF[this.ctx.difficulty] ?? DIFF[1]
+  /** 每个玩家的投掷倒计时 */
+  spawnT = [1.0, 1.01]
+  /** 连击：0.35s 窗内连切计数 + 剩余窗口 */
+  comboN = 0
   comboT = 0
-  spawnT = 0.35
+  /** 冰冻慢动作剩余时长（真实时间） */
+  slowT = 0
+  /** 大横幅剩余时长 / 文案 / 颜色 */
+  bannerT = 0
+  bannerText = ''
+  bannerColor = '#fff'
+  /** 炸弹震屏剩余时长 */
+  shakeT = 0
+  /** 每玩家每只手的挥刀状态 */
+  strokes: StrokeState[][] = [
+    [{ dir: null, id: 0 }, { dir: null, id: 0 }],
+    [{ dir: null, id: 0 }, { dir: null, id: 0 }],
+  ]
+  /** 结算统计（对齐站点：切中率/一刀最多/补刀/碰炸弹） */
+  stats = [
+    { thrown: 0, cut: 0, cut2: 0, bombs: 0, maxCombo: 0 },
+    { thrown: 0, cut: 0, cut2: 0, bombs: 0, maxCombo: 0 },
+  ]
   sliceFx: { x: number; y: number; a: number; life: number; color: string }[] = []
 
-  tick(_f: PoseFrame, dt: number) {
-    this.spawnT -= dt
-    if (this.spawnT <= 0) {
-      this.spawnT = 0.95 - Math.min(0.3, this.ctx.difficulty * 0.08) + Math.random() * 0.4
-      const n = Math.random() < 0.3 ? 2 : 1
-      for (let i = 0; i < n; i++) this.spawn()
-    }
+  tick(_f: PoseFrame, dtE: number) {
+    // 慢动作剩余时长按真实时间递减（对齐站点：q 用未缩放 dt 递减）
+    const realDt = this.lastRealDt
+    this.slowT = Math.max(0, this.slowT - realDt)
+    this.bannerT = Math.max(0, this.bannerT - realDt)
+    this.shakeT = Math.max(0, this.shakeT - realDt)
+
+    // 连击窗口到期 → 结算奖励（≥2 个才有，n×3 分）
     if (this.comboT > 0) {
-      this.comboT -= dt
-      if (this.comboT <= 0) {
-        this.combo = 0
-        this.ctx.setCombo(0)
+      this.comboT -= realDt
+      if (this.comboT <= 0) this.settleCombo()
+    }
+
+    // 投掷（每个玩家独立节奏：every ×(1−0.25×heat)×(0.75~1.25 随机)）
+    const heat = Math.min(1, this.t / 60)
+    for (let pi = 0; pi < 2; pi++) {
+      this.spawnT[pi] -= dtE
+      if (this.spawnT[pi] <= 0) {
+        this.throwWave(pi)
+        this.spawnT[pi] = this.cfg.every * (1 - 0.25 * heat) * (0.75 + Math.random() * 0.5)
       }
     }
 
+    // 物理（慢动作时 dtE 已缩放）
     for (const fr of this.fruits) {
       if (!fr.alive) continue
-      fr.vy += G * dt
-      fr.x += fr.vx * dt
-      fr.y += fr.vy * dt
-      fr.rot += fr.spin * dt
-      fr.life -= dt
-      if (fr.immune > 0) fr.immune -= dt
-      if (fr.y > this.H + 120 || fr.life <= 0) fr.alive = false
+      fr.vy += fr.g0 * dtE
+      fr.x += fr.vx * dtE
+      fr.y += fr.vy * dtE
+      fr.rot += fr.spin * dtE
+      fr.life -= dtE
+      if (fr.gen > 0) {
+        fr.age += dtE
+        // 湿块在空中滴汁（每秒 30×wet 滴，湿度指数衰减）
+        if (fr.wet > 0.03) {
+          fr.dripT += dtE * 30 * fr.wet
+          fr.wet *= Math.exp(-3.4 * dtE)
+          while (fr.dripT >= 1) {
+            fr.dripT--
+            this.particles.burst(fr.x, fr.y, fr.type.flesh, 1, 90, 2.5)
+          }
+        }
+      }
+      if (fr.y > this.H + 130 || fr.life <= 0) fr.alive = false
     }
 
+    // 命中判定（炸弹无手速门槛；水果要够快；补刀要换刀方向 + 时间窗）
     for (const pv of this.players) {
       const b = pv.body
       if (!b) continue
+      const pi = pv.id
       const hands = [
-        { sp: b.lHandV, c: pv.lHand },
-        { sp: b.rHandV, c: pv.rHand },
+        { v: b.lHandV, c: pv.lHand },
+        { v: b.rHandV, c: pv.rHand },
       ]
-      for (const h of hands) {
-        if (h.sp < 0.5) continue
-        const trail = h.c.trail
-        if (trail.length < 2) continue
-        const a = trail[trail.length - 2]
-        const z = trail[trail.length - 1]
+      for (let hi = 0; hi < 2; hi++) {
+        const h = hands[hi]
+        const strokeId = this.updateStroke(pi, hi, h.v, h.c.trail)
+        if (h.c.trail.length < 2) continue
+        const a = h.c.trail[h.c.trail.length - 2]
+        const z = h.c.trail[h.c.trail.length - 1]
         const swipe = Math.atan2(z.y - a.y, z.x - a.x)
+        const dirLen = Math.hypot(z.x - a.x, z.y - a.y) || 1
+        const dir = { x: (z.x - a.x) / dirLen, y: (z.y - a.y) / dirLen }
         for (const fr of this.fruits) {
-          if (!fr.alive || fr.immune > 0) continue
-          if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + 18)) this.slice(fr, swipe)
+          if (!fr.alive || fr.owner !== pi) continue
+          if (fr.bomb) {
+            // 炸弹：手碰到就爆（判定更宽松），无手速门槛
+            if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r * 0.9 + HAND_R * 0.5)) this.explode(fr)
+            continue
+          }
+          if (fr.gen === 0) {
+            if (h.v < this.cfg.minSpeed) continue
+            if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + HAND_R * 0.45)) {
+              this.cutFruit(fr, pi, swipe, dir, h.v, strokeId)
+            }
+          } else {
+            // 补刀：块龄窗口 + 必须换刀方向
+            if (h.v < this.cfg.minSpeed) continue
+            if (fr.gen >= 2) continue
+            if (fr.age < RECUT_MIN || fr.age > RECUT_MAX) continue
+            if (fr.stroke === strokeId) continue
+            if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + HAND_R * 0.45)) {
+              this.recutPiece(fr, pi, swipe, dir, h.v, strokeId)
+            }
+          }
         }
       }
     }
 
-    this.fruits = this.fruits.filter((f) => f.alive)
+    this.fruits = this.fruits.filter((fr) => fr.alive)
     for (let i = this.sliceFx.length - 1; i >= 0; i--) {
       const s = this.sliceFx[i]
-      s.life -= dt
+      s.life -= dtE
       if (s.life <= 0) this.sliceFx.splice(i, 1)
     }
     this.ctx.setScore(this.score)
-    this.ctx.setExtra('combo', this.combo)
+    this.ctx.setCombo(this.comboN)
+    this.ctx.setExtra('补刀', this.stats.reduce((n, s) => n + s.cut2, 0))
+    this.ctx.setExtra('炸弹', this.stats.reduce((n, s) => n + s.bombs, 0))
   }
 
-  private spawn() {
-    const isBomb = Math.random() < 0.14
-    const type = FRUITS[Math.floor(Math.random() * FRUITS.length)]
-    const x = 140 + Math.random() * (this.W - 280)
-    const targetH = 430 + Math.random() * 180
-    const vy = -Math.sqrt(2 * G * targetH)
-    const vx = (this.W / 2 - x) * 0.2 + (Math.random() - 0.5) * 70
-    const r = 46 + Math.random() * 12
-    this.fruits.push({
-      x,
-      y: this.H + 70,
-      vx,
-      vy,
-      r,
-      fullR: r,
-      type,
-      rot: Math.random() * 6,
-      spin: (Math.random() - 0.5) * 2.4,
-      alive: true,
-      bomb: isBomb,
-      life: 6,
-      gen: 0,
-      clips: [],
-      immune: 0,
-    })
+  /** 上次 tick 收到的真实 dt（慢动作缩放前的），供倒计时类状态使用 */
+  private lastRealDt = 0
+  private realClock = 0
+
+  update(f: PoseFrame, dt: number) {
+    // 慢动作：全局时间流速 ×0.45（对齐站点），slowT 本身用真实时间走
+    this.lastRealDt = dt
+    this.realClock += dt
+    const k = this.slowT > 0 ? SLOW_K : 1
+    super.update(f, dt * k)
   }
 
-  private slice(fr: Fruit, swipe: number) {
-    fr.alive = false
-    this.sliceFx.push({ x: fr.x, y: fr.y, a: swipe, life: 0.32, color: fr.bomb ? '#ff5c5c' : fr.type.color })
-    if (fr.bomb) {
-      this.ctx.audio.hit()
-      this.particles.burst(fr.x, fr.y, '#ff5c5c', 30, 560, 9)
-      this.particles.burst(fr.x, fr.y, '#ffb703', 16, 380, 6)
-      this.score = Math.max(0, this.score - 25)
-      this.combo = 0
-      this.ctx.setCombo(0)
-      this.say('−25', fr.x, fr.y, '#ff6b6b', 44)
-      this.ctx.setScore(this.score)
-      return
+  /** 更新挥刀 stroke：够快才记录；方向反转或停手重挥 → 新刀。返回当前 stroke id */
+  private updateStroke(pi: number, hi: number, speed: number, trail: { x: number; y: number }[]) {
+    const st = this.strokes[pi][hi]
+    if (speed < this.cfg.minSpeed * 0.7) {
+      st.dir = null
+      return st.id
     }
-    this.combo++
-    this.comboT = 0.9
-    this.ctx.setCombo(this.combo)
-    const base = [10, 6, 4][fr.gen] ?? 4
-    const gain = base + Math.min(30, (this.combo - 1) * 4)
-    this.score += gain
+    if (trail.length < 2) return st.id
+    const a = trail[trail.length - 2]
+    const z = trail[trail.length - 1]
+    let dx = z.x - a.x
+    let dy = z.y - a.y
+    const len = Math.hypot(dx, dy)
+    if (len < 1) return st.id
+    dx /= len
+    dy /= len
+    if (!st.dir || dx * st.dir.x + dy * st.dir.y < 0) st.id++
+    st.dir = { x: dx, y: dy }
+    return st.id
+  }
+
+  /** 该玩家的投掷区：实际只 detected 到一个人 → 宽区；两人各占一半（对齐站点 solo/duo 分区） */
+  private zone(pi: number) {
+    const present = this.players.filter((p) => p.body).length
+    if (present <= 1) {
+      const cx = this.players[pi].body ? this.players[pi].body!.shoulderC.x * this.W : this.W / 2
+      return { x0: Math.max(this.W * 0.08, cx - this.W * 0.38), x1: Math.min(this.W * 0.92, cx + this.W * 0.38) }
+    }
+    return pi === 0 ? { x0: this.W * 0.05, x1: this.W * 0.47 } : { x0: this.W * 0.53, x1: this.W * 0.95 }
+  }
+
+  /** 抛一波（对齐站点：数量/炸弹率/冰冻率按难度，落点贴近玩家，抛物线顶点 0.14H~0.6H） */
+  private throwWave(pi: number) {
+    const z = this.zone(pi)
+    const b = this.players[pi].body
+    const cx = b ? b.shoulderC.x * this.W : (z.x0 + z.x1) / 2
+    const torso = b ? Math.max(60, b.scale * this.H * 0.5) : this.H * 0.2
+    const n = this.cfg.burst[0] + Math.floor(Math.random() * (this.cfg.burst[1] - this.cfg.burst[0] + 1))
+    for (let i = 0; i < n; i++) {
+      const roll = Math.random()
+      const isBomb = roll < this.cfg.bomb
+      const isIce = !isBomb && roll < this.cfg.bomb + this.cfg.ice
+      const type = isBomb ? FRUITS[0] : isIce ? ICE : FRUITS[Math.floor(Math.random() * FRUITS.length)]
+      const r = this.cfg.r * (isBomb ? 0.95 : 1) * (this.H / 720)
+      const x = Math.min(z.x1 - r, Math.max(z.x0 + r, cx + (Math.random() * 2 - 1) * torso * 1.4))
+      const apexY = this.H * 0.14 + r + Math.random() * (this.H * 0.6 - (this.H * 0.14 + r))
+      const y0 = this.H + r * 1.2
+      const d = y0 - apexY
+      // 由滞空时长反推初速与重力：上升耗时 = hang/2
+      const g0 = (8 * d) / (this.cfg.hang * this.cfg.hang)
+      const vy = (-4 * d) / this.cfg.hang
+      const vx = (cx - x) * 0.25 + (Math.random() - 0.5) * 80
+      this.fruits.push({
+        x,
+        y: y0,
+        vx,
+        vy,
+        g0,
+        r,
+        fullR: r,
+        type,
+        rot: Math.random() * 6,
+        spin: (Math.random() - 0.5) * 5,
+        alive: true,
+        bomb: isBomb,
+        life: this.cfg.hang * 1.6,
+        gen: 0,
+        clips: [],
+        stroke: -1,
+        age: 0,
+        wet: type.juice,
+        dripT: 0,
+        owner: pi,
+      })
+      if (!isBomb) this.stats[pi].thrown++
+    }
     this.ctx.audio.slash()
-    this.particles.burst(fr.x, fr.y, fr.type.color, 18, 400, 7)
-    this.particles.burst(fr.x, fr.y, '#ffffff', 6, 240, 3)
-    this.say(`+${gain}`, fr.x, fr.y - 10, this.combo >= 4 ? '#fff36b' : '#ffffff', fr.gen === 0 ? 34 : 28)
-    if (this.combo % 5 === 0) {
+  }
+
+  private comboPos = { x: 0, y: 0 }
+
+  /** 切中整果（含冰冻香蕉）：按种类计分 + 连击窗计时 */
+  private cutFruit(fr: Fruit, pi: number, swipe: number, dir: { x: number; y: number }, speed: number, strokeId: number) {
+    fr.alive = false
+    this.stats[pi].cut++
+    this.sliceFx.push({ x: fr.x, y: fr.y, a: swipe, life: 0.32, color: fr.type.flesh })
+    // 果汁粒子：数量随种类湿度（对齐站点 per-fruit drops）
+    const drops = Math.round(6 + 22 * fr.type.juice)
+    this.particles.burst(fr.x, fr.y, fr.type.flesh, drops, 300 + 160 * fr.type.juice, 5)
+    this.particles.burst(fr.x, fr.y, fr.type.color, Math.round(4 + 8 * fr.type.juice), 260, 3.5)
+
+    if (fr.type === ICE) {
+      // 冰冻香蕉：慢动作 3.2s
+      this.slowT = SLOW_T
+      this.showBanner('❄ 时间变慢！', '#7dd3fc', 1.2)
       this.ctx.audio.good()
-      this.say(`连击 ${this.combo}！`, this.W / 2, 210, '#ffd54a', 52)
+      this.particles.burst(fr.x, fr.y, '#e6f7ff', 20, 300, 4)
+    } else {
+      this.ctx.audio.slash()
     }
-    // 小块再切就直接碎了；整果 / 半块一分为二，两块还能继续切
+
+    // 连击：0.35s 窗内连切 ≥2，窗结束时一次性奖励 n×3
+    if (this.realClock - this.lastCutAt <= COMBO_WIN) this.comboN++
+    else this.comboN = 1
+    this.lastCutAt = this.realClock
+    this.comboT = COMBO_WIN
+    this.comboPos = { x: fr.x, y: fr.y }
+    this.ctx.setCombo(this.comboN)
+
+    this.say(`+${fr.type.points}`, fr.x, fr.y - 10, '#ffffff', 30)
+    this.score += fr.type.points
+    this.split(fr, swipe, dir, speed, strokeId)
+  }
+
+  private lastCutAt = -10
+
+  /** 连击窗口结束：≥2 个补 n×3 分，≥3 个出横幅（对齐站点文案） */
+  private settleCombo() {
+    const n = this.comboN
+    this.comboN = 0
+    this.comboT = 0
+    this.ctx.setCombo(0)
+    if (n < 2) return
+    const bonus = n * 3
+    this.score += bonus
+    for (let pi = 0; pi < 2; pi++) this.stats[pi].maxCombo = Math.max(this.stats[pi].maxCombo, n)
+    this.say(`${n} 连切 +${bonus}`, this.comboPos.x, this.comboPos.y - 60, '#ffd54a', 40)
+    if (n >= 3) this.showBanner(`一刀 ${n} 个！`, '#ffd54a', 0.9)
+    this.ctx.audio.good()
+    this.particles.burst(this.comboPos.x, this.comboPos.y, '#ffd54a', 10 + n * 3, 320, 5)
+  }
+
+  /** 补刀半块：+1 分，再分成两小块 */
+  private recutPiece(fr: Fruit, pi: number, swipe: number, dir: { x: number; y: number }, speed: number, strokeId: number) {
+    fr.alive = false
+    this.stats[pi].cut2++
+    this.score += 1
+    this.say('+1', fr.x, fr.y - 10, '#d9f7be', 26)
+    this.sliceFx.push({ x: fr.x, y: fr.y, a: swipe, life: 0.26, color: fr.type.flesh })
+    this.ctx.audio.slash()
+    this.particles.burst(fr.x, fr.y, fr.type.flesh, Math.round(4 + 10 * fr.type.juice), 260, 4)
+    this.split(fr, swipe, dir, speed, strokeId)
+  }
+
+  /** 把一块沿切线分成两半（对齐站点分离物理：法线弹开 + 挥动方向平移 + 附加自旋） */
+  private split(fr: Fruit, swipe: number, dir: { x: number; y: number }, speed: number, strokeId: number) {
     if (fr.gen >= 2) {
-      this.particles.burst(fr.x, fr.y, fr.type.flesh, 22, 420, 6)
+      // 小块再切就碎掉
+      this.particles.burst(fr.x, fr.y, fr.type.flesh, 14, 320, 3.5)
       return
     }
-    const shrink = fr.gen === 0 ? 0.94 : 0.8
     const nx = -Math.sin(swipe)
     const ny = Math.cos(swipe)
+    const pushN = Math.min(420, Math.max(240, speed * 250))
+    const pushT = Math.min(170, Math.max(70, speed * 60))
+    const spinAdd = Math.min(5.5, Math.max(1.2, speed * 2))
     for (const s of [1, -1]) {
-      const k = 120 + Math.random() * 70
       this.fruits.push({
         x: fr.x + nx * s * 10,
         y: fr.y + ny * s * 10,
-        vx: fr.vx + nx * s * k,
-        vy: fr.vy + ny * s * k - 40,
-        r: fr.fullR * shrink * (fr.gen === 0 ? 0.72 : 0.5),
-        fullR: fr.fullR * shrink,
+        vx: fr.vx * 0.5 + nx * s * pushN + dir.x * pushT,
+        vy: fr.vy * 0.4 + ny * s * pushN + dir.y * pushT - 80,
+        g0: fr.g0,
+        r: fr.r,
+        fullR: fr.fullR,
         type: fr.type,
         rot: fr.rot,
-        spin: s * (1.6 + Math.random() * 1.8),
+        spin: fr.spin * 0.5 + s * spinAdd,
         alive: true,
         bomb: false,
         life: Math.max(fr.life, 2.6),
         gen: fr.gen + 1,
         clips: [...fr.clips, { a: swipe - fr.rot, s }],
-        immune: 0.16,
+        stroke: strokeId,
+        age: 0,
+        wet: Math.min(1, fr.wet + fr.type.juice * 0.5),
+        dripT: 0,
+        owner: fr.owner,
       })
     }
   }
 
+  /** 炸弹：−10 分 + 连击清零 + 震屏（无手速门槛，碰到就炸） */
+  private explode(fr: Fruit) {
+    fr.alive = false
+    this.stats[fr.owner].bombs++
+    this.score = Math.max(0, this.score - 10)
+    this.settleCombo()
+    this.shakeT = 0.4
+    this.showBanner('💣 炸弹！', '#ff6b6b', 0.9)
+    this.say('−10', fr.x, fr.y, '#ff6b6b', 40)
+    this.ctx.audio.hit()
+    this.particles.burst(fr.x, fr.y, '#3d2c4a', 20, 520, 7)
+    this.particles.burst(fr.x, fr.y, '#ffb703', 16, 380, 5)
+    this.sliceFx.push({ x: fr.x, y: fr.y, a: Math.random() * Math.PI, life: 0.3, color: '#ff5c5c' })
+  }
+
+  private showBanner(text: string, color: string, sec: number) {
+    this.bannerText = text
+    this.bannerColor = color
+    this.bannerT = sec
+  }
+
   paint(c: CanvasRenderingContext2D) {
+    c.save()
+    // 震屏（炸弹）
+    if (this.shakeT > 0) {
+      const amp = 9 * (this.shakeT / 0.4)
+      c.translate(Math.sin(this.realClock * 70) * amp, Math.cos(this.realClock * 63) * amp * 0.6)
+    }
+
+    // 慢动作蓝色滤镜
+    if (this.slowT > 0) {
+      c.save()
+      c.globalAlpha = Math.min(0.28, this.slowT * 0.4)
+      c.fillStyle = '#8fd3ff'
+      c.fillRect(-20, -20, this.W + 40, this.H + 40)
+      c.restore()
+    }
+
+    // 切开的块（块龄越大越淡，对齐站点 3s 淡出）
+    for (const fr of this.fruits) {
+      if (fr.gen === 0) continue
+      c.save()
+      c.globalAlpha = Math.min(1, Math.max(0, 3 - fr.age))
+      c.translate(fr.x, fr.y)
+      glow(c, 0, 0, fr.fullR * 1.15, fr.type.color, 0.18)
+      c.rotate(fr.rot)
+      drawPiece(c, fr.fullR, fr.type, fr.clips)
+      c.restore()
+    }
+
+    // 整果与炸弹
+    for (const fr of this.fruits) {
+      if (fr.gen > 0) continue
+      c.save()
+      c.translate(fr.x, fr.y)
+      if (fr.bomb) {
+        // 炸弹红色脉冲预警圈（对齐站点 sin 闪动）
+        c.save()
+        c.globalAlpha = 0.25 + Math.sin(this.realClock * 12) * 0.12
+        c.fillStyle = '#ff5c5c'
+        c.beginPath()
+        c.arc(0, 0, fr.r * 1.35, 0, Math.PI * 2)
+        c.fill()
+        c.restore()
+        glow(c, 0, 0, fr.fullR * 1.9, '#ff5c5c', 0.42)
+      } else if (fr.type === ICE) {
+        c.save()
+        c.globalAlpha = 0.3 + Math.sin(this.realClock * 6) * 0.1
+        c.fillStyle = '#cfefff'
+        c.beginPath()
+        c.arc(0, 0, fr.r * 1.3, 0, Math.PI * 2)
+        c.fill()
+        c.restore()
+        glow(c, 0, 0, fr.fullR * 1.6, '#8fd3ff', 0.3)
+      } else {
+        glow(c, 0, 0, fr.fullR * 1.5, fr.type.color, 0.2)
+      }
+      c.rotate(fr.bomb ? Math.sin(fr.rot) * 0.2 : fr.rot)
+      if (fr.bomb) drawBomb(c, fr.fullR, this.realClock)
+      else drawPiece(c, fr.fullR, fr.type, fr.clips)
+      c.restore()
+    }
+
+    // 刀光
     for (const s of this.sliceFx) {
       const k = s.life / 0.32
       c.save()
@@ -345,32 +633,31 @@ class FruitSlash extends BaseGame implements Game {
       c.globalAlpha = 1
       c.restore()
     }
+    c.restore()
 
-    for (const fr of this.fruits) {
-      c.save()
-      c.translate(fr.x, fr.y)
-      if (fr.bomb) {
-        glow(c, 0, 0, fr.fullR * 1.9, '#ff5c5c', 0.42)
-      } else {
-        glow(c, 0, 0, fr.fullR * (fr.gen === 0 ? 1.6 : 1.15), fr.type.color, 0.22)
-      }
-      c.rotate(fr.rot)
-      if (fr.bomb) drawBomb(c, fr.fullR, this.t)
-      else drawPiece(c, fr.fullR, fr.type, fr.clips)
-      c.restore()
-    }
-
-    if (this.combo >= 2) {
-      const pct = Math.max(0, this.comboT / 0.9)
+    // 连击条（0.35s 窗倒计时）
+    if (this.comboN >= 2) {
+      const pct = Math.max(0, this.comboT / COMBO_WIN)
       c.fillStyle = 'rgba(10,14,40,.42)'
       c.beginPath()
       c.roundRect(this.W / 2 - 118, 22, 236, 56, 28)
       c.fill()
-      outlineTxt(c, `连击 ${this.combo}`, this.W / 2 - 16, 50, 30, '#ffd54a')
+      outlineTxt(c, `连击 ${this.comboN}`, this.W / 2 - 16, 50, 30, '#ffd54a')
       ring(c, this.W / 2 + 86, 50, 18, pct, '#ffd54a', 5)
     }
 
-    txt(c, '水果能连切三刀：半块、小块都能再切，炸弹别碰', this.W / 2, this.H - 34, 20, 'rgba(255,255,255,.8)', 'center', 'bold')
+    // 大横幅（时间变慢 / 一刀 N 个 / 炸弹）
+    if (this.bannerT > 0) {
+      c.globalAlpha = Math.min(1, this.bannerT / 0.3)
+      outlineTxt(c, this.bannerText, this.W / 2, this.H * 0.28, 54, this.bannerColor)
+      c.globalAlpha = 1
+    }
+
+    if (this.slowT > 0) {
+      outlineTxt(c, '❄ 慢动作', this.W / 2, 112, 36, '#7dd3fc')
+    }
+
+    txt(c, '半块还能再切一刀（要换个方向挥），冰冻香蕉让时间变慢，炸弹别碰', this.W / 2, this.H - 34, 20, 'rgba(255,255,255,.8)', 'center', 'bold')
   }
 }
 

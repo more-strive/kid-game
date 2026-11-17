@@ -1,4 +1,4 @@
-import { Cursor, H, Particles, W } from './draw'
+import { Cursor, drawSkeleton, H, Particles, W } from './draw'
 import type { Body, Game, GameContext, PoseFrame } from './types'
 
 export interface FloatWord {
@@ -92,6 +92,10 @@ export abstract class BaseGame implements Game {
   }
 
   draw(c: CanvasRenderingContext2D) {
+    // 骨架叠加（对齐站点：摄像头画面上画骨架线，游戏元素之下）
+    for (const pv of this.players) {
+      if (pv.body && pv.body.visible) drawSkeleton(c, pv.body.lm, W, H, pv.color, 0.45)
+    }
     this.paint(c)
     this.particles.draw(c)
     // 手部光标画在最上层，玩家随时能看到自己的手在哪（没检测到人时自动隐藏）

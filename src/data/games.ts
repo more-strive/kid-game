@@ -27,7 +27,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 18, energy: 2,
     types: ["节奏", "用手"],
     duration: 75, mode: "versus",
-    star2: 300, star3: 450,
+    star2: 140, star3: 220,
+    // 站点真实星级：easy 60/140/220、medium 100/200/300、hard 150/300/450；静态阈值取 easy 档
     emoji: "🥁", color: "#38bdf8",
   },
   {
@@ -39,7 +40,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 16, energy: 2,
     types: ["节奏", "用手"],
     duration: 75, mode: "coop",
-    star2: 220, star3: 320,
+    star2: 110, star3: 170,
+    // 站点真实星级：easy 40/110/170、medium 60/150/235、hard 100/220/320；静态阈值取 easy 档,
     emoji: "🎸", color: "#38bdf8",
   },
   {
@@ -51,7 +53,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 14, energy: 1,
     types: ["节奏", "用手"],
     duration: 75, mode: "coop",
-    star2: 220, star3: 320,
+    star2: 140, star3: 220,
+    // 站点真实星级：easy 60/140/220、medium 80/180/280、hard 100/220/320；静态阈值取 easy 档,
     emoji: "🎹", color: "#38bdf8",
   },
   {
@@ -63,7 +66,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 9, ageMax: 18, energy: 2,
     types: ["对战", "用手"],
     duration: 60, mode: "versus",
-    star2: 7, star3: 10,
+    star2: 5, star3: 8,
+    // 站点真实星级：easy 3/5/8、medium 3/6/9、hard 4/7/10；静态阈值取 easy 档,
     emoji: "🏓", color: "#38bdf8",
   },
   {
@@ -75,7 +79,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 2,
     types: ["全身"],
     duration: 60, mode: "versus",
-    star2: 13, star3: 19,
+    star2: 9, star3: 13,
+    // 站点真实星级：easy 5/9/13、medium 6/11/16、hard 7/13/19；静态阈值取 easy 档,
     emoji: "🐘", color: "#38bdf8",
   },
   {
@@ -87,7 +92,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 1,
     types: ["用手", "安静"],
     duration: 0, mode: "versus",
-    star2: 70, star3: 85,
+    star2: 60, star3: 75,
+    // 站点真实星级：easy 40/60/75、medium 45/65/80、hard 50/70/85；静态阈值取 easy 档,
     emoji: "🏹", color: "#38bdf8",
   },
   {
@@ -99,7 +105,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 12, energy: 1,
     types: ["动脑", "安静"],
     duration: 75, mode: "versus",
-    star2: 9, star3: 12,
+    star2: 10, star3: 14,
+    // 站点真实星级：easy 6/10/14、medium 6/10/14、hard 5/9/12；静态阈值取 easy 档,
     emoji: "⚖️", color: "#38bdf8",
   },
   {
@@ -111,7 +118,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 2,
     types: ["用手", "全身"],
     duration: 60, mode: "versus",
-    star2: 120, star3: 195,
+    star2: 75, star3: 120,
+    // 站点真实星级：easy 35/75/120、medium 45/95/155、hard 60/120/195；静态阈值取 easy 档,
     emoji: "🎈", color: "#38bdf8",
   },
   {
@@ -123,7 +131,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 16, energy: 3,
     types: ["节奏", "跑跳", "体能"],
     duration: 60, mode: "versus",
-    star2: 66, star3: 86,
+    star2: 48, star3: 63,
+    // 站点真实星级：easy 32/48/63、medium 38/58/76、hard 44/66/86；静态阈值取 easy 档,
     emoji: "🎋", color: "#38bdf8",
   },
   {
@@ -135,7 +144,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 15, energy: 3,
     types: ["跑跳", "体能"],
     duration: 75, mode: "versus",
-    star2: 130, star3: 180,
+    star2: 100, star3: 140,
+    // 站点真实星级：easy 60/100/140、medium 70/115/160、hard 80/130/180；静态阈值取 easy 档,
     emoji: "🚲", color: "#38bdf8",
   },
   {
@@ -147,7 +157,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 12, energy: 1,
     types: ["用手", "安静"],
     duration: 90, mode: "versus",
-    star2: 12, star3: 17,
+    star2: 9, star3: 13,
+    // 站点真实星级：easy 5/9/13、medium 6/10/15、hard 7/12/17；静态阈值取 easy 档,
     emoji: "🧱", color: "#38bdf8",
   },
   {
@@ -159,7 +170,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 1,
     types: ["安静"],
     duration: 60, mode: "coop",
-    star2: 9, star3: 12,
+    star2: 7, star3: 10,
+    // 站点真实星级：easy 4/7/10、medium 5/8/11、hard 5/9/12；静态阈值取 easy 档,
     emoji: "🎈", color: "#38bdf8",
   },
   {
@@ -171,7 +183,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 12, energy: 2,
     types: ["用手", "节奏"],
     duration: 60, mode: "versus",
-    star2: 45, star3: 60,
+    star2: 28, star3: 42,
+    // 站点真实星级：easy 15/28/42、medium 25/40/55、hard 30/45/60；静态阈值取 easy 档
     emoji: "🏀", color: "#38bdf8",
   },
   {
@@ -183,7 +196,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 14, energy: 2,
     types: ["用手"],
     duration: 0, mode: "versus",
-    star2: 34, star3: 45,
+    star2: 32, star3: 42,
+    // 站点真实星级：easy 20/32/42、medium 18/32/44、hard 20/34/45；静态阈值取 easy 档,
     emoji: "🎳", color: "#38bdf8",
   },
   {
@@ -195,7 +209,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 9, ageMax: 18, energy: 3,
     types: ["用手", "体能"],
     duration: 60, mode: "versus",
-    star2: 90, star3: 130,
+    star2: 60, star3: 90,
+    // 站点真实星级：easy 30/60/90、medium 40/75/110、hard 50/90/130；静态阈值取 easy 档,
     emoji: "🥊", color: "#38bdf8",
   },
   {
@@ -208,6 +223,7 @@ export const GAMES: GameMeta[] = [
     types: ["安静"],
     duration: 90, mode: "coop",
     star2: 60, star3: 75,
+    // 站点真实星级：easy 40/60/75、medium 40/60/75、hard 40/60/75；静态阈值取 easy 档,
     emoji: "🫁", color: "#38bdf8",
   },
   {
@@ -219,7 +235,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 2,
     types: ["合作", "全身", "动脑"],
     duration: 90, mode: "coop",
-    star2: 13, star3: 18,
+    star2: 10, star3: 14,
+    // 站点真实星级：easy 6/10/14、medium 7/12/16、hard 8/13/18；静态阈值取 easy 档,
     emoji: "🌉", color: "#38bdf8",
   },
   {
@@ -231,7 +248,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 1,
     types: ["用手", "安静"],
     duration: 60, mode: "versus",
-    star2: 320, star3: 520,
+    star2: 170, star3: 270,
+    // 站点真实星级：easy 70/170/270、medium 100/240/400、hard 140/320/520；静态阈值取 easy 档
     emoji: "🫧", color: "#38bdf8",
   },
   {
@@ -243,7 +261,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 12, ageMax: 18, energy: 3,
     types: ["体能", "跑跳"],
     duration: 60, mode: "versus",
-    star2: 20, star3: 28,
+    star2: 14, star3: 20,
+    // 站点真实星级：easy 8/14/20、medium 10/17/24、hard 12/20/28；静态阈值取 easy 档,
     emoji: "💪", color: "#38bdf8",
   },
   {
@@ -255,7 +274,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 1,
     types: ["安静"],
     duration: 60, mode: "versus",
-    star2: 18, star3: 26,
+    star2: 12, star3: 18,
+    // 站点真实星级：easy 6/12/18、medium 8/15/22、hard 10/18/26；静态阈值取 easy 档,
     emoji: "🕯️", color: "#38bdf8",
   },
   {
@@ -267,7 +287,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 2,
     types: ["合作", "用手"],
     duration: 90, mode: "coop",
-    star2: 4, star3: 6,
+    star2: 3, star3: 4,
+    // 站点真实星级：easy 2/3/4、medium 2/3/5、hard 2/4/6；静态阈值取 easy 档,
     emoji: "🤝", color: "#38bdf8",
   },
   {
@@ -279,7 +300,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 2,
     types: ["合作", "节奏", "用手"],
     duration: 60, mode: "coop",
-    star2: 130, star3: 195,
+    star2: 95, star3: 155,
+    // 站点真实星级：easy 45/95/155、medium 60/120/185、hard 65/130/195；静态阈值取 easy 档
     emoji: "🌸", color: "#38bdf8",
   },
   {
@@ -291,7 +313,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 1,
     types: ["动脑", "用手"],
     duration: 60, mode: "versus",
-    star2: 3, star3: 5,
+    star2: 5, star3: 7,
+    // 站点真实星级：easy 3/5/7、medium 3/5/6、hard 2/3/5；静态阈值取 easy 档,
     emoji: "👏", color: "#38bdf8",
   },
   {
@@ -303,7 +326,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 9, ageMax: 18, energy: 3,
     types: ["全身", "体能"],
     duration: 90, mode: "versus",
-    star2: 50, star3: 70,
+    star2: 30, star3: 45,
+    // 站点真实星级：easy 15/30/45、medium 20/40/55、hard 25/50/70；静态阈值取 easy 档,
     emoji: "🧗", color: "#38bdf8",
   },
   {
@@ -315,7 +339,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 11, energy: 1,
     types: ["动脑", "安静"],
     duration: 75, mode: "versus",
-    star2: 7, star3: 10,
+    star2: 8, star3: 11,
+    // 站点真实星级：easy 5/8/11、medium 5/8/11、hard 4/7/10；静态阈值取 easy 档,
     emoji: "🕐", color: "#38bdf8",
   },
   {
@@ -328,6 +353,7 @@ export const GAMES: GameMeta[] = [
     types: ["节奏", "用手"],
     duration: 75, mode: "coop",
     star2: 200, star3: 280,
+    // 站点真实星级：easy 120/200/280、medium 120/210/290、hard 110/200/280；静态阈值取 easy 档,
     emoji: "🎼", color: "#38bdf8",
   },
   {
@@ -340,6 +366,7 @@ export const GAMES: GameMeta[] = [
     types: ["全身", "动脑"],
     duration: 75, mode: "versus",
     star2: 5, star3: 7,
+    // 站点真实星级：easy 3/5/7、medium 3/5/7、hard 3/5/7；静态阈值取 easy 档,
     emoji: "🚦", color: "#38bdf8",
   },
   {
@@ -351,7 +378,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 12, ageMax: 18, energy: 3,
     types: ["节奏", "全身"],
     duration: 75, mode: "versus",
-    star2: 200, star3: 310,
+    star2: 160, star3: 250,
+    // 站点真实星级：easy 80/160/250、medium 90/180/280、hard 100/200/310；静态阈值取 easy 档,
     emoji: "💃", color: "#38bdf8",
   },
   {
@@ -363,7 +391,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 1,
     types: ["安静"],
     duration: 60, mode: "coop",
-    star2: 8, star3: 11,
+    star2: 6, star3: 9,
+    // 站点真实星级：easy 3/6/9、medium 4/7/10、hard 4/8/11；静态阈值取 easy 档,
     emoji: "🌼", color: "#38bdf8",
   },
   {
@@ -375,7 +404,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 1,
     types: ["用手", "安静"],
     duration: 0, mode: "versus",
-    star2: 280, star3: 400,
+    star2: 340, star3: 480,
+    // 站点真实星级：easy 200/340/480、medium 180/310/440、hard 160/280/400；静态阈值取 easy 档,
     emoji: "🎯", color: "#38bdf8",
   },
   {
@@ -387,7 +417,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 16, energy: 2,
     types: ["用手", "节奏"],
     duration: 60, mode: "versus",
-    star2: 140, star3: 200,
+    star2: 110, star3: 160,
+    // 站点真实星级：easy 60/110/160、medium 70/125/180、hard 80/140/200；静态阈值取 easy 档,
     emoji: "🪀", color: "#38bdf8",
   },
   {
@@ -399,7 +430,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 14, energy: 3,
     types: ["全身", "跑跳", "体能"],
     duration: 60, mode: "versus",
-    star2: 33, star3: 45,
+    star2: 25, star3: 35,
+    // 站点真实星级：easy 15/25/35、medium 18/30/40、hard 20/33/45；静态阈值取 easy 档,
     emoji: "🤾", color: "#38bdf8",
   },
   {
@@ -411,7 +443,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 18, energy: 3,
     types: ["合作", "节奏", "体能"],
     duration: 0, mode: "coop",
-    star2: 650, star3: 850,
+    star2: 550, star3: 750,
+    // 站点真实星级：easy 350/550/750、medium 400/600/800、hard 450/650/850；静态阈值取 easy 档,
     emoji: "🐉", color: "#38bdf8",
   },
   {
@@ -423,7 +456,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 3,
     types: ["体能", "全身", "用手"],
     duration: 75, mode: "versus",
-    star2: 90, star3: 120,
+    star2: 70, star3: 100,
+    // 站点真实星级：easy 40/70/100、medium 45/80/110、hard 50/90/120；静态阈值取 easy 档,
     emoji: "⚽", color: "#38bdf8",
   },
   {
@@ -435,7 +469,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 12, energy: 2,
     types: ["动脑", "全身"],
     duration: 75, mode: "versus",
-    star2: 6, star3: 9,
+    star2: 8, star3: 11,
+    // 站点真实星级：easy 4/8/11、medium 3/6/9、hard 3/6/9；静态阈值取 easy 档,
     emoji: "🔤", color: "#38bdf8",
   },
   {
@@ -447,7 +482,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 10, energy: 1,
     types: ["动脑", "用手"],
     duration: 60, mode: "versus",
-    star2: 5, star3: 7,
+    star2: 7, star3: 10,
+    // 站点真实星级：easy 4/7/10、medium 4/6/9、hard 3/5/7；静态阈值取 easy 档,
     emoji: "🅰️", color: "#38bdf8",
   },
   {
@@ -459,7 +495,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 2,
     types: ["对战", "用手"],
     duration: 90, mode: "versus",
-    star2: 6, star3: 10,
+    star2: 8, star3: 12,
+    // 站点真实星级：easy 4/8/12、medium 4/8/12、hard 3/6/10；静态阈值取 easy 档,
     emoji: "🤺", color: "#38bdf8",
   },
   {
@@ -471,7 +508,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 1,
     types: ["用手", "安静"],
     duration: 75, mode: "versus",
-    star2: 18, star3: 27,
+    star2: 13, star3: 20,
+    // 站点真实星级：easy 7/13/20、medium 8/15/23、hard 10/18/27；静态阈值取 easy 档,
     emoji: "✨", color: "#38bdf8",
   },
   {
@@ -483,7 +521,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 1,
     types: ["用手", "安静"],
     duration: 75, mode: "versus",
-    star2: 9, star3: 12,
+    star2: 7, star3: 10,
+    // 站点真实星级：easy 4/7/10、medium 5/8/11、hard 5/9/12；静态阈值取 easy 档,
     emoji: "🎣", color: "#38bdf8",
   },
   {
@@ -495,7 +534,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 12, ageMax: 18, energy: 3,
     types: ["体能", "跑跳", "全身"],
     duration: 60, mode: "versus",
-    star2: 75, star3: 110,
+    star2: 50, star3: 75,
+    // 站点真实星级：easy 30/50/75、medium 35/60/90、hard 45/75/110；静态阈值取 easy 档
     emoji: "🏋️", color: "#38bdf8",
   },
   {
@@ -507,7 +547,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 8, energy: 3,
     types: ["用手", "全身"],
     duration: 0, mode: "versus",
-    star2: 1000, star3: 1200,
+    star2: 1000, star3: 1150,
+    // 站点真实星级：easy 300/1000/1150、medium 300/1000/1180、hard 300/1000/1200；静态阈值取 easy 档,
     emoji: "🐦", color: "#38bdf8",
   },
   {
@@ -519,7 +560,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 10, energy: 3,
     types: ["跑跳", "全身"],
     duration: 60, mode: "versus",
-    star2: 380, star3: 560,
+    star2: 260, star3: 400,
+    // 站点真实星级：easy 130/260/400、medium 160/320/480、hard 190/380/560；静态阈值取 easy 档,
     emoji: "🌲", color: "#38bdf8",
   },
   {
@@ -531,7 +573,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 10, energy: 3,
     types: ["全身"],
     duration: 60, mode: "versus",
-    star2: 160, star3: 230,
+    star2: 120, star3: 190,
+    // 站点真实星级：easy 50/120/190、medium 60/140/210、hard 70/160/230；静态阈值取 easy 档,
     emoji: "🧊", color: "#38bdf8",
   },
   {
@@ -543,7 +586,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 12, energy: 2,
     types: ["用手"],
     duration: 75, mode: "versus",
-    star2: 24, star3: 34,
+    star2: 18, star3: 26,
+    // 站点真实星级：easy 10/18/26、medium 13/23/33、hard 14/24/34；静态阈值取 easy 档,
     emoji: "🐕", color: "#38bdf8",
   },
   {
@@ -555,7 +599,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 14, energy: 2,
     types: ["用手"],
     duration: 60, mode: "versus",
-    star2: 240, star3: 380,
+    star2: 140, star3: 230,
+    // 站点真实星级：easy 60/140/230、medium 90/200/320、hard 110/240/380；静态阈值取 easy 档,
     emoji: "🍉", color: "#38bdf8",
   },
   {
@@ -567,7 +612,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 10, energy: 1,
     types: ["安静", "动脑"],
     duration: 60, mode: "versus",
-    star2: 9, star3: 12,
+    star2: 7, star3: 10,
+    // 站点真实星级：easy 4/7/10、medium 5/8/12、hard 6/9/12；静态阈值取 easy 档,
     emoji: "😜", color: "#38bdf8",
   },
   {
@@ -579,7 +625,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 9, ageMax: 16, energy: 3,
     types: ["全身", "用手", "跑跳"],
     duration: 60, mode: "coop",
-    star2: 24, star3: 36,
+    star2: 16, star3: 24,
+    // 站点真实星级：easy 8/16/24、medium 10/20/30、hard 12/24/36；静态阈值取 easy 档,
     emoji: "🧤", color: "#38bdf8",
   },
   {
@@ -591,7 +638,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 16, energy: 2,
     types: ["用手"],
     duration: 60, mode: "versus",
-    star2: 20, star3: 30,
+    star2: 14, star3: 22,
+    // 站点真实星级：easy 6/14/22、medium 8/18/28、hard 10/20/30；静态阈值取 easy 档,
     emoji: "🏀", color: "#38bdf8",
   },
   {
@@ -603,7 +651,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 12, energy: 3,
     types: ["跑跳", "体能"],
     duration: 60, mode: "versus",
-    star2: 28, star3: 38,
+    star2: 22, star3: 30,
+    // 站点真实星级：easy 14/22/30、medium 16/25/34、hard 18/28/38；静态阈值取 easy 档,
     emoji: "🔢", color: "#38bdf8",
   },
   {
@@ -615,7 +664,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 3,
     types: ["跑跳", "体能", "对战"],
     duration: 0, mode: "versus",
-    star2: 600, star3: 780,
+    star2: 520, star3: 700,
+    // 站点真实星级：easy 330/520/700、medium 370/560/740、hard 400/600/780；静态阈值取 easy 档,
     emoji: "🚧", color: "#38bdf8",
   },
   {
@@ -627,7 +677,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 18, energy: 3,
     types: ["体能", "全身"],
     duration: 60, mode: "versus",
-    star2: 60, star3: 90,
+    star2: 35, star3: 55,
+    // 站点真实星级：easy 15/35/55、medium 25/45/70、hard 35/60/90；静态阈值取 easy 档
     emoji: "⭐", color: "#38bdf8",
   },
   {
@@ -639,7 +690,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 14, energy: 3,
     types: ["跑跳", "体能", "节奏"],
     duration: 60, mode: "coop",
-    star2: 65, star3: 95,
+    star2: 45, star3: 65,
+    // 站点真实星级：easy 25/45/65、medium 30/55/80、hard 35/65/95；静态阈值取 easy 档
     emoji: "🪢", color: "#38bdf8",
   },
   {
@@ -651,7 +703,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 18, energy: 3,
     types: ["体能", "跑跳"],
     duration: 60, mode: "versus",
-    star2: 60, star3: 85,
+    star2: 35, star3: 55,
+    // 站点真实星级：easy 15/35/55、medium 25/45/70、hard 35/60/85；静态阈值取 easy 档
     emoji: "🦵", color: "#38bdf8",
   },
   {
@@ -664,6 +717,7 @@ export const GAMES: GameMeta[] = [
     types: ["对战", "全身", "用手"],
     duration: 90, mode: "versus",
     star2: 2, star3: 3,
+    // 站点真实星级：easy 1/2/3、medium 1/2/3、hard 1/2/3；静态阈值取 easy 档,
     emoji: "🥋", color: "#38bdf8",
   },
   {
@@ -675,7 +729,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 9, ageMax: 18, energy: 3,
     types: ["全身", "跑跳", "动脑"],
     duration: 60, mode: "versus",
-    star2: 22, star3: 32,
+    star2: 14, star3: 20,
+    // 站点真实星级：easy 8/14/20、medium 10/18/26、hard 12/22/32；静态阈值取 easy 档,
     emoji: "🔴", color: "#38bdf8",
   },
   {
@@ -687,7 +742,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 3,
     types: ["合作", "节奏", "全身"],
     duration: 75, mode: "coop",
-    star2: 45, star3: 60,
+    star2: 35, star3: 50,
+    // 站点真实星级：easy 20/35/50、medium 25/40/55、hard 30/45/60；静态阈值取 easy 档,
     emoji: "🦁", color: "#38bdf8",
   },
   {
@@ -699,7 +755,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 2,
     types: ["用手", "全身"],
     duration: 60, mode: "versus",
-    star2: 15, star3: 22,
+    star2: 9, star3: 14,
+    // 站点真实星级：easy 4/9/14、medium 6/12/18、hard 8/15/22；静态阈值取 easy 档
     emoji: "🦙", color: "#38bdf8",
   },
   {
@@ -711,7 +768,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 2,
     types: ["跑跳", "体能"],
     duration: 0, mode: "versus",
-    star2: 190, star3: 220,
+    star2: 150, star3: 180,
+    // 站点真实星级：easy 120/150/180、medium 140/170/200、hard 160/190/220；静态阈值取 easy 档,
     emoji: "🦘", color: "#38bdf8",
   },
   {
@@ -723,7 +781,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 1,
     types: ["安静", "动脑"],
     duration: 60, mode: "coop",
-    star2: 140, star3: 190,
+    star2: 150, star3: 200,
+    // 站点真实星级：easy 90/150/200、medium 90/150/200、hard 80/140/190；静态阈值取 easy 档,
     emoji: "🔊", color: "#38bdf8",
   },
   {
@@ -735,7 +794,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 1,
     types: ["用手", "安静", "动脑"],
     duration: 90, mode: "coop",
-    star2: 7, star3: 10,
+    star2: 4, star3: 6,
+    // 站点真实星级：easy 2/4/6、medium 2/4/6、hard 2/3/5；静态阈值取 easy 档,
     emoji: "🖌️", color: "#38bdf8",
   },
   {
@@ -747,7 +807,7 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 9, energy: 1,
     types: ["用手", "动脑", "安静"],
     duration: 60, mode: "versus",
-    star2: 5, star3: 8,
+    star2: 6, star3: 9, // 站点真实星级：easy 3/6/9、medium 3/6/9、hard 3/5/8
     emoji: "🔢", color: "#38bdf8",
   },
   {
@@ -759,7 +819,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 14, energy: 1,
     types: ["动脑", "用手"],
     duration: 90, mode: "versus",
-    star2: 13, star3: 19,
+    star2: 9, star3: 13,
+    // 站点真实星级：easy 5/9/13、medium 6/11/16、hard 7/13/19；静态阈值取 easy 档,
     emoji: "🃏", color: "#38bdf8",
   },
   {
@@ -771,7 +832,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 2,
     types: ["对战", "全身"],
     duration: 80, mode: "versus",
-    star2: 50, star3: 66,
+    star2: 50, star3: 70,
+    // 站点真实星级：easy 30/50/70、medium 35/52/70、hard 35/50/66；静态阈值取 easy 档,
     emoji: "🪞", color: "#38bdf8",
   },
   {
@@ -783,7 +845,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 10, energy: 2,
     types: ["全身", "节奏", "跑跳"],
     duration: 75, mode: "versus",
-    star2: 6, star3: 9,
+    star2: 5, star3: 7,
+    // 站点真实星级：easy 3/5/7、medium 4/6/8、hard 4/6/9；静态阈值取 easy 档,
     emoji: "🪑", color: "#38bdf8",
   },
   {
@@ -795,7 +858,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 10, energy: 2,
     types: ["全身", "动脑"],
     duration: 60, mode: "versus",
-    star2: 13, star3: 18,
+    star2: 10, star3: 14,
+    // 站点真实星级：easy 6/10/14、medium 7/12/16、hard 8/13/18；静态阈值取 easy 档,
     emoji: "🔄", color: "#38bdf8",
   },
   {
@@ -807,7 +871,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 9, energy: 1,
     types: ["全身", "安静"],
     duration: 75, mode: "versus",
-    star2: 17, star3: 24,
+    star2: 14, star3: 20,
+    // 站点真实星级：easy 8/14/20、medium 9/15/21、hard 10/17/24；静态阈值取 easy 档,
     emoji: "📸", color: "#38bdf8",
   },
   {
@@ -819,7 +884,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 9, energy: 3,
     types: ["用手", "全身"],
     duration: 60, mode: "versus",
-    star2: 60, star3: 95,
+    star2: 40, star3: 60,
+    // 站点真实星级：easy 20/40/60、medium 25/50/80、hard 30/60/95；静态阈值取 easy 档,
     emoji: "🛏️", color: "#38bdf8",
   },
   {
@@ -831,7 +897,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 14, energy: 2,
     types: ["全身"],
     duration: 60, mode: "versus",
-    star2: 30, star3: 44,
+    star2: 22, star3: 34,
+    // 站点真实星级：easy 10/22/34、medium 14/28/42、hard 16/30/44；静态阈值取 easy 档,
     emoji: "✈️", color: "#38bdf8",
   },
   {
@@ -843,7 +910,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 1,
     types: ["安静", "节奏"],
     duration: 90, mode: "coop",
-    star2: 11, star3: 16,
+    star2: 12, star3: 18,
+    // 站点真实星级：easy 6/12/18、medium 6/12/18、hard 6/11/16；静态阈值取 easy 档,
     emoji: "🎵", color: "#38bdf8",
   },
   {
@@ -856,6 +924,7 @@ export const GAMES: GameMeta[] = [
     types: ["用手", "动脑"],
     duration: 90, mode: "versus",
     star2: 3, star3: 4,
+    // 站点真实星级：easy 2/3/4、medium 2/3/5、hard 2/3/4；静态阈值取 easy 档,
     emoji: "🍕", color: "#38bdf8",
   },
   {
@@ -867,7 +936,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 2,
     types: ["全身", "跑跳", "体能"],
     duration: 60, mode: "versus",
-    star2: 17, star3: 26,
+    star2: 12, star3: 18,
+    // 站点真实星级：easy 7/12/18、medium 8/14/20、hard 10/17/26；静态阈值取 easy 档,
     emoji: "🥕", color: "#38bdf8",
   },
   {
@@ -879,7 +949,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 1,
     types: ["对战", "安静"],
     duration: 60, mode: "versus",
-    star2: 6, star3: 8,
+    star2: 4, star3: 6,
+    // 站点真实星级：easy 3/4/6、medium 3/5/7、hard 4/6/8；静态阈值取 easy 档,
     emoji: "🤠", color: "#38bdf8",
   },
   {
@@ -891,7 +962,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 10, energy: 2,
     types: ["全身", "跑跳", "动脑"],
     duration: 60, mode: "versus",
-    star2: 7, star3: 10,
+    star2: 5, star3: 7,
+    // 站点真实星级：easy 2/5/7、medium 3/6/9、hard 3/7/10；静态阈值取 easy 档,
     emoji: "🥬", color: "#38bdf8",
   },
   {
@@ -903,7 +975,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 3,
     types: ["体能", "全身", "动脑"],
     duration: 60, mode: "versus",
-    star2: 46, star3: 64,
+    star2: 30, star3: 42,
+    // 站点真实星级：easy 18/30/42、medium 25/40/56、hard 30/46/64；静态阈值取 easy 档,
     emoji: "🚨", color: "#38bdf8",
   },
   {
@@ -915,7 +988,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 16, energy: 3,
     types: ["节奏", "全身", "跑跳"],
     duration: 75, mode: "versus",
-    star2: 220, star3: 320,
+    star2: 140, star3: 220,
+    // 站点真实星级：easy 60/140/220、medium 80/180/280、hard 100/220/320；静态阈值取 easy 档,
     emoji: "🎵", color: "#38bdf8",
   },
   {
@@ -927,7 +1001,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 18, energy: 3,
     types: ["体能", "跑跳", "节奏"],
     duration: 60, mode: "versus",
-    star2: 110, star3: 145,
+    star2: 60, star3: 100,
+    // 站点真实星级：easy 20/60/100、medium 35/90/120、hard 60/110/145；静态阈值取 easy 档
     emoji: "🪢", color: "#38bdf8",
   },
   {
@@ -939,7 +1014,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 2,
     types: ["全身", "用手"],
     duration: 75, mode: "versus",
-    star2: 13, star3: 18,
+    star2: 10, star3: 14,
+    // 站点真实星级：easy 6/10/14、medium 7/12/17、hard 8/13/18；静态阈值取 easy 档,
     emoji: "🪜", color: "#38bdf8",
   },
   {
@@ -952,6 +1028,7 @@ export const GAMES: GameMeta[] = [
     types: ["用手", "安静", "动脑"],
     duration: 60, mode: "versus",
     star2: 2, star3: 3,
+    // 站点真实星级：easy 1/2/3、medium 1/2/4、hard 1/2/3；静态阈值取 easy 档,
     emoji: "✌️", color: "#38bdf8",
   },
   {
@@ -963,7 +1040,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 2,
     types: ["用手", "动脑"],
     duration: 75, mode: "coop",
-    star2: 15, star3: 22,
+    star2: 12, star3: 18,
+    // 站点真实星级：easy 6/12/18、medium 9/18/27、hard 12/24/36；静态阈值取 easy 档
     emoji: "🔮", color: "#38bdf8",
   },
   {
@@ -975,7 +1053,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 2,
     types: ["用手"],
     duration: 75, mode: "versus",
-    star2: 90, star3: 135,
+    star2: 55, star3: 85,
+    // 站点真实星级：easy 25/55/85、medium 35/70/110、hard 45/90/135；静态阈值取 easy 档
     emoji: "🎁", color: "#38bdf8",
   },
   {
@@ -987,7 +1066,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 2,
     types: ["合作", "用手", "全身"],
     duration: 60, mode: "coop",
-    star2: 140, star3: 220,
+    star2: 100, star3: 170,
+    // 站点真实星级：easy 45/100/170、medium 60/130/210、hard 65/140/220；静态阈值取 easy 档,
     emoji: "🪚", color: "#38bdf8",
   },
   {
@@ -999,7 +1079,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 9, energy: 3,
     types: ["全身", "跑跳"],
     duration: 60, mode: "versus",
-    star2: 54, star3: 84,
+    star2: 30, star3: 46,
+    // 站点真实星级：easy 14/30/46、medium 20/42/64、hard 26/54/84；静态阈值取 easy 档
     emoji: "🦭", color: "#38bdf8",
   },
   {
@@ -1011,7 +1092,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 16, energy: 2,
     types: ["动脑", "全身"],
     duration: 90, mode: "versus",
-    star2: 14, star3: 20,
+    star2: 12, star3: 17,
+    // 站点真实星级：easy 7/12/17、medium 8/14/20、hard 8/14/20；静态阈值取 easy 档,
     emoji: "🚩", color: "#38bdf8",
   },
   {
@@ -1023,7 +1105,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 12, energy: 2,
     types: ["全身", "动脑"],
     duration: 0, mode: "versus",
-    star2: 680, star3: 940,
+    star2: 450, star3: 620,
+    // 站点真实星级：easy 250/450/620、medium 300/560/780、hard 360/680/940；静态阈值取 easy 档,
     emoji: "🕳️", color: "#38bdf8",
   },
   {
@@ -1035,7 +1118,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 14, energy: 3,
     types: ["跑跳", "体能"],
     duration: 60, mode: "coop",
-    star2: 34, star3: 48,
+    star2: 20, star3: 30,
+    // 站点真实星级：easy 10/20/30、medium 12/24/36、hard 18/34/48；静态阈值取 easy 档,
     emoji: "🪶", color: "#38bdf8",
   },
   {
@@ -1047,7 +1131,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 10, energy: 2,
     types: ["全身", "动脑"],
     duration: 60, mode: "versus",
-    star2: 16, star3: 22,
+    star2: 12, star3: 18,
+    // 站点真实星级：easy 6/12/18、medium 8/15/22、hard 9/16/22；静态阈值取 easy 档,
     emoji: "🗣️", color: "#38bdf8",
   },
   {
@@ -1059,7 +1144,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 10, energy: 2,
     types: ["全身"],
     duration: 60, mode: "versus",
-    star2: 260, star3: 400,
+    star2: 180, star3: 270,
+    // 站点真实星级：easy 90/180/270、medium 110/220/340、hard 130/260/400；静态阈值取 easy 档,
     emoji: "⛷️", color: "#38bdf8",
   },
   {
@@ -1071,7 +1157,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 8, energy: 2,
     types: ["用手"],
     duration: 60, mode: "versus",
-    star2: 24, star3: 36,
+    star2: 12, star3: 18,
+    // 站点真实星级：easy 6/12/18、medium 9/18/27、hard 12/24/36；静态阈值取 easy 档,
     emoji: "❄️", color: "#38bdf8",
   },
   {
@@ -1083,7 +1170,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 10, energy: 3,
     types: ["跑跳", "全身"],
     duration: 0, mode: "versus",
-    star2: 1600, star3: 2100,
+    star2: 800, star3: 1100,
+    // 站点真实星级：easy 100/800/1100、medium 100/1200/1600、hard 100/1600/2100；静态阈值取 easy 档,
     emoji: "⚽", color: "#38bdf8",
   },
   {
@@ -1095,7 +1183,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 10, ageMax: 18, energy: 2,
     types: ["全身", "用手"],
     duration: 75, mode: "coop",
-    star2: 550, star3: 850,
+    star2: 350, star3: 550,
+    // 站点真实星级：easy 150/350/550、medium 200/450/700、hard 250/550/850；静态阈值取 easy 档,
     emoji: "🚀", color: "#38bdf8",
   },
   {
@@ -1107,6 +1196,7 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 12, energy: 1,
     types: ["用手", "动脑", "安静"],
     duration: 75, mode: "versus",
+    // 站点真实星级：easy 3/6/9、medium 3/6/9、hard 3/6/9；静态阈值取 easy 档
     star2: 6, star3: 9,
     emoji: "🔠", color: "#38bdf8",
   },
@@ -1119,7 +1209,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 3,
     types: ["跑跳", "体能", "对战"],
     duration: 0, mode: "versus",
-    star2: 650, star3: 850,
+    star2: 550, star3: 750,
+    // 站点真实星级：easy 350/550/750、medium 400/600/800、hard 450/650/850；静态阈值取 easy 档,
     emoji: "🏃", color: "#38bdf8",
   },
   {
@@ -1131,7 +1222,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 18, energy: 3,
     types: ["体能", "跑跳"],
     duration: 60, mode: "versus",
-    star2: 32, star3: 50,
+    star2: 20, star3: 30,
+    // 站点真实星级：easy 10/20/30、medium 15/25/40、hard 20/32/50；静态阈值取 easy 档
     emoji: "🦵", color: "#38bdf8",
   },
   {
@@ -1143,7 +1235,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 9, energy: 2,
     types: ["全身"],
     duration: 60, mode: "versus",
-    star2: 28, star3: 40,
+    star2: 20, star3: 30,
+    // 站点真实星级：easy 10/20/30、medium 12/24/36、hard 15/28/40；静态阈值取 easy 档
     emoji: "😋", color: "#38bdf8",
   },
   {
@@ -1155,7 +1248,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 4, ageMax: 12, energy: 2,
     types: ["跑跳"],
     duration: 60, mode: "versus",
-    star2: 33, star3: 45,
+    star2: 25, star3: 35,
+    // 站点真实星级：easy 15/25/35、medium 18/30/40、hard 20/33/45；静态阈值取 easy 档
     emoji: "⭐", color: "#38bdf8",
   },
   {
@@ -1168,6 +1262,7 @@ export const GAMES: GameMeta[] = [
     types: ["用手", "安静"],
     duration: 0, mode: "versus",
     star2: 50, star3: 70,
+    // 站点真实星级：easy 30/50/70、medium 35/55/75、hard 30/50/70；静态阈值取 easy 档,
     emoji: "🪨", color: "#38bdf8",
   },
   {
@@ -1180,6 +1275,7 @@ export const GAMES: GameMeta[] = [
     types: ["对战", "体能"],
     duration: 0, mode: "versus",
     star2: 20, star3: 25,
+    // 站点真实星级：easy 10/20/25、medium 10/20/25、hard 10/20/25；静态阈值取 easy 档,
     emoji: "🤼", color: "#38bdf8",
   },
   {
@@ -1191,7 +1287,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 16, energy: 2,
     types: ["全身"],
     duration: 75, mode: "versus",
-    star2: 260, star3: 340,
+    star2: 200, star3: 280,
+    // 站点真实星级：easy 120/200/280、medium 140/230/310、hard 160/260/340；静态阈值取 easy 档,
     emoji: "🏄", color: "#38bdf8",
   },
   {
@@ -1203,7 +1300,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 15, energy: 3,
     types: ["体能", "全身", "对战"],
     duration: 0, mode: "versus",
-    star2: 650, star3: 850,
+    star2: 550, star3: 750,
+    // 站点真实星级：easy 350/550/750、medium 400/600/800、hard 450/650/850；静态阈值取 easy 档,
     emoji: "🏊", color: "#38bdf8",
   },
   {
@@ -1215,7 +1313,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 12, ageMax: 18, energy: 1,
     types: ["安静", "全身"],
     duration: 90, mode: "versus",
-    star2: 560, star3: 720,
+    star2: 500, star3: 650,
+    // 站点真实星级：easy 300/500/650、medium 330/530/700、hard 350/560/720；静态阈值取 easy 档,
     emoji: "☯️", color: "#38bdf8",
   },
   {
@@ -1227,7 +1326,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 15, energy: 2,
     types: ["用手", "对战"],
     duration: 75, mode: "versus",
-    star2: 9, star3: 12,
+    star2: 7, star3: 10,
+    // 站点真实星级：easy 4/7/10、medium 5/8/11、hard 5/9/12；静态阈值取 easy 档,
     emoji: "🎾", color: "#38bdf8",
   },
   {
@@ -1239,7 +1339,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 8, ageMax: 18, energy: 3,
     types: ["合作", "跑跳", "体能"],
     duration: 0, mode: "coop",
-    star2: 650, star3: 850,
+    star2: 550, star3: 750,
+    // 站点真实星级：easy 350/550/750、medium 400/600/800、hard 450/650/850；静态阈值取 easy 档,
     emoji: "🦵", color: "#38bdf8",
   },
   {
@@ -1252,6 +1353,7 @@ export const GAMES: GameMeta[] = [
     types: ["全身", "动脑", "安静"],
     duration: 120, mode: "coop",
     star2: 4, star3: 6,
+    // 站点真实星级：easy 2/4/6、medium 2/4/6、hard 2/4/6；静态阈值取 easy 档,
     emoji: "🧩", color: "#38bdf8",
   },
   {
@@ -1263,7 +1365,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 1,
     types: ["动脑", "用手"],
     duration: 60, mode: "versus",
-    star2: 7, star3: 10,
+    star2: 11, star3: 16,
+    // 站点真实星级：easy 6/11/16、medium 6/10/15、hard 4/7/10；静态阈值取 easy 档,
     emoji: "🎨", color: "#38bdf8",
   },
   {
@@ -1275,7 +1378,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 5, ageMax: 12, energy: 3,
     types: ["跑跳", "体能"],
     duration: 60, mode: "versus",
-    star2: 120, star3: 180,
+    star2: 160, star3: 240,
+    // 站点真实星级：easy 80/160/240、medium 75/150/225、hard 60/120/180；静态阈值取 easy 档,
     emoji: "🤸", color: "#38bdf8",
   },
   {
@@ -1288,6 +1392,7 @@ export const GAMES: GameMeta[] = [
     types: ["对战", "体能", "用手"],
     duration: 45, mode: "versus",
     star2: 2, star3: 3,
+    // 站点真实星级：easy 1/2/3、medium 1/2/3、hard 1/2/3；静态阈值取 easy 档,
     emoji: "🪢", color: "#38bdf8",
   },
   {
@@ -1299,7 +1404,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 6, ageMax: 15, energy: 2,
     types: ["用手", "全身"],
     duration: 75, mode: "coop",
-    star2: 28, star3: 40,
+    star2: 20, star3: 30,
+    // 站点真实星级：easy 10/20/30、medium 12/24/36、hard 15/28/40；静态阈值取 easy 档,
     emoji: "🏐", color: "#38bdf8",
   },
   {
@@ -1311,7 +1417,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 7, energy: 1,
     types: ["用手", "安静"],
     duration: 60, mode: "versus",
-    star2: 10, star3: 13,
+    star2: 7, star3: 10,
+    // 站点真实星级：easy 4/7/10、medium 6/9/12、hard 6/10/13；静态阈值取 easy 档
     emoji: "🌸", color: "#38bdf8",
   },
   {
@@ -1323,7 +1430,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 3, ageMax: 9, energy: 2,
     types: ["用手"],
     duration: 60, mode: "versus",
-    star2: 45, star3: 72,
+    star2: 28, star3: 45,
+    // 站点真实星级：easy 12/28/45、medium 16/36/58、hard 20/45/72；静态阈值取 easy 档,
     emoji: "🔨", color: "#38bdf8",
   },
   {
@@ -1335,7 +1443,8 @@ export const GAMES: GameMeta[] = [
     ageMin: 12, ageMax: 18, energy: 1,
     types: ["安静", "体能", "全身"],
     duration: 90, mode: "versus",
-    star2: 150, star3: 190,
+    star2: 130, star3: 170,
+    // 站点真实星级：easy 80/130/170、medium 90/140/180、hard 100/150/190；静态阈值取 easy 档,
     emoji: "🧘", color: "#38bdf8",
   },
 ]
