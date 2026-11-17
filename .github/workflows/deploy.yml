@@ -39,11 +39,18 @@ jobs:
 
       - name: Install and Build 🔧
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
+          # build 链里已包含 vue-tsc 类型检查、vite build、预压缩（生成 .gz）
           pnpm run build
           # SPA 深链接兜底：直接访问 /games、/play/xxx 这类路径时，
           # 若 nginx 没配 try_files，就靠这份 404.html 交给前端路由接管
           cp dist/index.html dist/404.html
+
+      - name: Report bundle size 📊
+        run: |
+          echo "产物总体积：$(du -sh dist | cut -f1)"
+          echo "首屏关键文件："
+          ls -lh dist/assets | awk '/ index-| vendor-/{print "  " $9 "  " $5}'
 
       - name: Deploy via SCP 🚀
         uses: appleboy/scp-action@v0.1.6

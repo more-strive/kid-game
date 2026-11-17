@@ -133,12 +133,48 @@ scripts/
 
 ## 部署
 
-`.github/workflows/deploy.yml`：推 `main` 触发，`pnpm install && pnpm run build` → 复制 `dist/index.html` 为 `dist/404.html`（SPA 深链接兜底）→ 用 `appleboy/scp-action` 把 `dist/` 铺到自有服务器的 `DEPLOY_PATH`。
+`.github/workflows/deploy.yml`：推 `main` 触发，`pnpm install --frozen-lockfile && pnpm run build` → 复制 `dist/index.html` 为 `dist/404.html`（SPA 深链接兜底）→ 用 `appleboy/scp-action` 把 `dist/` 铺到自有服务器的 `DEPLOY_PATH`。
 
 - 需要在仓库 Secrets 里配 `SSH_HOST` / `SSH_USERNAME` / `SSH_PRIVATE_KEY`。
 - 部署在子目录（如 `https://domain/kid-game/`）时，把 workflow 里的 `BASE_PATH` 改成 `/kid-game/`；wasm、模型、图标都按 `import.meta.env.BASE_URL` 拼路径。
 - `scp-action` 开了 `rm: true`，会先清空 `DEPLOY_PATH` 再上传，改路径前务必确认，写错等于删目录。
-- 本地构建**不会**自动清空 `dist`（`vite.config.ts` 里 `emptyOutDir: false`，因为 public 下 200+ 文件会触发批量删除保护），所以每次 build 前先手动清一次，否则历史 hash 产物会一直堆着。单次干净构建约 **24MB / 78 个 assets**；不清的话会一路涨（曾累积到 62MB / 692 个 assets，其中 2.4MB 的 js 膨胀成 27MB）。
+- 本地构建**不会**自动清空 `dist`（`vite.config.ts` 里 `emptyOutDir: false`，因为 public 下 200+ 文件会触发批量删除保护），所以每次 build 前先手动清一次，否则历史 hash 产物会一直堆着。
+
+### 构建优化
+
+`pnpm run build` = 类型检查 → `vite build` → `scripts/precompress.mjs`（生成 `.gz`）。当前干净构建约 **22MB 产物 + 5.1MB 预压缩文件**，首屏三个文件 gzip 后合计约 **100KB**。
+
+| 项目 | 优化前 | 优化后 |
+| --- | --- | --- |
+| 入口 JS `index-*.js` | 1000KB | 145KB（gzip 49KB） |
+| 入口 CSS `index-*.css` | 387KB | 65KB（gzip 12KB） |
+| `dist/assets` 合计 | 2.4MB | 1.4MB |
+
+做了三件事：
+
+1. **Element Plus 按需引入**（`src/main.ts`）：只注册实际用到的 `ElSelect/ElOption/ElInput/ElEmpty` 并引对应 `es/components/<name>/style/css`。全量 `use(ElementPlus)` + `dist/index.css` 曾把 ~700KB JS 和 ~330KB CSS 塞进入口包。新增组件时记得在这里补 import。
+2. **Vue 全家桶单独成块**（`vite.config.ts` 的 `codeSplitting.groups`）：`vendor-vue` 走长效缓存，业务代码迭代时用户只重下 145KB 的入口包。只圈 Vue 生态，不要把 `node_modules` 全量塞进公共块——mediapipe 是动态引入的，被并进去会拖慢首屏。
+3. **产物预压缩**（`scripts/precompress.mjs`）：给 js/css/svg/wasm 生成 `.gz`，14.7MB 的 wasm 压到 4.2MB。配合 nginx `gzip_static on` 直接读文件，省掉每个请求现压 14MB 的 CPU 开销。
+
+服务器侧用 `docs/nginx.conf`：`gzip_static on` 需要 nginx 编入 `http_gzip_static_module`（`nginx -V` 确认；没有就删掉那一行，回退到 `gzip on` 现压）。wasm 必须有 `application/wasm` MIME，否则 `WebAssembly.instantiateStreaming` 会拒绝加载。
+
+`pnpm run build:fast` 跳过类型检查只打包，`pnpm run precompress` 单独补压一次产物。
+
+上线后自查（替换成实际的 hash 文件名）：
+
+```bash
+nginx -t && nginx -s reload
+
+# 命中预压缩：应看到 Content-Encoding: gzip + Cache-Control: public, immutable
+curl -sI -H 'Accept-Encoding: gzip' https://game.yft.design/assets/index-XXXX.js | grep -iE 'content-encoding|cache-control'
+
+# wasm 必须是 application/wasm，否则 instantiateStreaming 会拒绝加载
+curl -sI https://game.yft.design/wasm/vision_wasm_internal.wasm | grep -i content-type
+
+# SPA 深链接：应返回 200 + index.html
+curl -sI https://game.yft.design/play/yoga | head -1
+```
+
 
 ## 数据来源
 
