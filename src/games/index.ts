@@ -6,24 +6,17 @@ const impls = import.meta.glob(['./impl/*.ts', './proto/*.ts'])
 /** 玩法原型复用表：同一套玩法引擎 + 每个游戏自己的主题配置 */
 
 const ALIAS: Record<string, string> = {
-  // 仍走原型引擎的游戏（前 4 个的原型已对齐真实规则；后 8 个待后续批次实装）
+  // 仍走原型引擎的游戏（原型已按原站真实规则对齐）
   'whack-mole': './proto/whack.ts',
   'santa-catch': './proto/catch.ts',
   'math-catch': './proto/catch.ts',
   'spell-catch': './proto/catch.ts',
-  // rep（报告已备，待实装）
-  // pose（报告待补，先走 hold 姿势引擎）
 }
 
-/** 每个玩法原型配套的场景装饰背景 */
+/** 每个玩法原型/专属实现配套的场景装饰背景，未列出的默认 garden */
 const BG_BY_PROTO: Record<string, string> = {
   './proto/whack.ts': 'garden',
-  './proto/whack-legacy.ts': 'garden',
   './proto/catch.ts': 'garden',
-  './proto/rep.ts': 'stadium',
-  './proto/pose.ts': 'stage',
-  './proto/aim.ts': 'stadium',
-  './proto/rhythm.ts': 'stage',
   './impl/freeze.ts': 'garden',
   './impl/fruit-slash.ts': 'space',
   './impl/balloon-keep.ts': 'garden',
