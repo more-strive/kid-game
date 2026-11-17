@@ -186,6 +186,8 @@ class MagicBrush extends BaseGame implements Game {
 
   constructor(ctx: GameContext) {
     super(ctx)
+    // 手部检测可用时笔尖升级为食指尖（站点口径；不可用则维持腕点兜底）
+    ctx.enableHands().catch(() => undefined)
     for (let i = 0; i < 2; i++) {
       this.painters.push({
         anchor: { x: this.W / 2, y: this.H * 0.3, S: 200 },
@@ -297,7 +299,10 @@ class MagicBrush extends BaseGame implements Game {
     const useL = b.lHand.y <= b.rHand.y
     const hand = useL ? b.lHand : b.rHand
     const shoulder = useL ? b.lShoulder : b.rShoulder
-    const tipScreen = { x: hand.x * this.W, y: hand.y * this.H }
+    // 笔尖：手部检测开启时用食指尖（站点口径），否则腕点兜底
+    const det = useL ? b.lHandDet : b.rHandDet
+    const tipSource = det?.index ?? hand
+    const tipScreen = { x: tipSource.x * this.W, y: tipSource.y * this.H }
     const down = hand.y * this.H < shoulder.y * this.H - T * DOWN_LINE
     // 画布坐标
     const tip = {

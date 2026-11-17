@@ -45,6 +45,43 @@ export interface Body {
   feetSpread: number
   lHandAboveHead: boolean
   rHandAboveHead: boolean
+  /** 手部检测（屏幕左/右手；仅 enableHands 的游戏有值） */
+  lHandDet?: HandDet
+  rHandDet?: HandDet
+  /** 脸部表情（仅 enableFace 的游戏有值） */
+  face?: FaceState
+}
+
+/** 单只手的检测结果（HandLandmarker，仅 enableHands 的游戏有值） */
+export interface HandDet {
+  /** 食指尖（屏幕坐标，已镜像） */
+  index: Pt
+  /** 拇指尖 */
+  thumb: Pt
+  /** 掌心（腕 + 四指根的平均） */
+  palm: Pt
+  /** 捏合度：拇指尖-食指尖距离 ÷ 手长（0=捏死，>1=张开） */
+  pinch: number
+  /** 伸直手指数 0~4（四指，不含拇指；按「指尖离腕 > 指关节离腕」判定，旋转不敏感） */
+  fingers: number
+}
+
+/** 脸部表情状态（FaceLandmarker blendShapes，仅 enableFace 的游戏有值，全部 0~1） */
+export interface FaceState {
+  /** 张嘴（jawOpen） */
+  jaw: number
+  blinkL: number
+  blinkR: number
+  /** 鼓腮（cheekPuff） */
+  puff: number
+  /** 嘟嘴（mouthPucker） */
+  pucker: number
+  /** 微笑（mouthSmileLeft/Right 均值） */
+  smile: number
+  /** 挑眉（browInnerUp） */
+  browUp: number
+  /** 皱眉（browDownLeft/Right 均值） */
+  browDown: number
 }
 
 export interface PoseFrame {
@@ -85,6 +122,12 @@ export interface GameContext {
   difficulty: number
   /** 局内热力 0~1：随游戏时长线性爬升（站点由宿主黑盒维护，按「局内进度」推断口径对齐） */
   readonly heat: number
+  /** 麦克风音量检测（吹气/喊话类游戏用）：工厂里调 mic.ensure()，帧循环读 mic.level（0~1） */
+  mic: import('./mic').MicKit
+  /** 启用手部检测（HandLandmarker）：Body.lHandDet/rHandDet 在模型就绪后生效 */
+  enableHands(): Promise<void>
+  /** 启用脸部表情（FaceLandmarker blendShapes）：Body.face 在模型就绪后生效 */
+  enableFace(): Promise<void>
 }
 
 export interface Game {

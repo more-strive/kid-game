@@ -1,5 +1,6 @@
 import { audio } from './audio'
 import { H, W, outlineTxt } from './draw'
+import { mic } from './mic'
 import { tracker } from './pose'
 import type { Game, GameContext, HudSnapshot } from './types'
 import type { GameMeta } from '@/data/games'
@@ -153,6 +154,9 @@ export class GameHost {
       get heat() {
         return host.duration > 0 ? Math.min(1, host.elapsed / host.duration) : 0
       },
+      mic,
+      enableHands: () => tracker.enableHands(),
+      enableFace: () => tracker.enableFace(),
     }
     this.game = await createGame(this.meta.slug, ctx)
     if (this.game?.bg) this.setBackground(this.game.bg)
@@ -246,6 +250,7 @@ export class GameHost {
       this.hud.progress = 0
     }
     this.emitHud()
+    mic.update(dt)
 
     try {
       this.game?.update(frame, dt)

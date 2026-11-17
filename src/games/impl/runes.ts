@@ -252,6 +252,8 @@ class Runes extends BaseGame implements Game {
 
   constructor(ctx: GameContext) {
     super(ctx)
+    // 手部检测可用时笔尖升级为食指尖（站点口径；不可用则维持腕点兜底）
+    ctx.enableHands().catch(() => undefined)
     for (let i = 0; i < 2; i++) {
       this.zoner.push({
         hp: HP_MAX, broken: false, drawing: false, hand: 0, stroke: [], upT: 0, lostT: 0,
@@ -356,7 +358,7 @@ class Runes extends BaseGame implements Game {
         this.stopDraw(p, T)
         return
       }
-      const tip = p.hand === 0 ? b.lHand : b.rHand
+      const tip = p.hand === 0 ? b.lHandDet?.index ?? b.lHand : b.rHandDet?.index ?? b.rHand
       const last = p.stroke[p.stroke.length - 1]
       const px = { x: tip.x * this.W, y: tip.y * this.H }
       if (!last || Math.hypot(px.x - last.x, px.y - last.y) > 5) p.stroke.push(px)
