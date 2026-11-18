@@ -1,5 +1,5 @@
 import { BaseGame, segHit } from '@/core/base'
-import type { Game, GameContext, PoseFrame } from '@/core/types'
+import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { glow, outlineTxt, ring, txt } from '@/core/draw'
 
 type Kind = 'round' | 'oval' | 'crescent'
@@ -38,7 +38,10 @@ const SLOW_T = 3.2 // 冰冻慢动作时长（秒）
 const SLOW_K = 0.45 // 慢动作全局时间流速
 const RECUT_MIN = 0.12 // 补刀最早：切开后 0.12s 内不可再切
 const RECUT_MAX = 2.2 // 补刀最晚：块龄超过 2.2s 不可再切
-const HAND_R = 16 // 手部判定半径
+const HAND_R = 20 // 手部判定半径（与手光标圆环一致，避免“看着碰到却不切”）
+const HAND_FWD = 0.3 // 判定点从手腕沿肘→腕方向前移的比例（×前臂长），逼近手掌中心
+const SPEED_K = 0.6 // 速度门槛放宽系数（归一化速度横向天然偏小）
+const TOUCH_HOLD = 0.1 // 手贴住水果超过该秒数也触发切割（慢手兜底，秒）
 
 /** 一个切面：a 是切线在水果局部坐标里的角度，s 表示保留哪一侧（1 保留 y>0，-1 保留 y<0） */
 interface Clip {
@@ -73,6 +76,8 @@ interface Fruit {
   dripT: number
   /** 归属玩家：只能切自己那波（对齐站点 owner 隔离） */
   owner: number
+  /** 手持续贴住的累计秒数：慢速按上去也能切（兜底容错） */
+  touchT: number
 }
 
 /** 单只手的挥刀状态：方向反转（点积 < 0）或停手后重新挥动 → 新的一刀 */
@@ -174,6 +179,22 @@ function drawPiece(c: CanvasRenderingContext2D, fullR: number, t: FruitType, cli
     c.restore()
   }
   c.restore()
+}
+
+/**
+ * 手掌判定点相对手腕的偏移（归一化坐标）。
+ * 姿态检测只给到手腕，而孩子眼里的“手”是手掌/手指，比手腕靠前半个手掌，
+ * 沿肘→腕方向外推 ~0.3 个前臂长（夹在 0.012~0.05 之间，手臂朝镜头时不至于乱飞）。
+ */
+function palmOffset(b: Body, side: 0 | 1) {
+  const w = side === 0 ? b.lHand : b.rHand
+  const e = side === 0 ? b.lElbow : b.rElbow
+  const dx = w.x - e.x
+  const dy = w.y - e.y
+  const len = Math.hypot(dx, dy)
+  if (len < 1e-4) return { x: 0, y: 0 }
+  const k = Math.min(0.05, Math.max(0.012, len * HAND_FWD))
+  return { x: (dx / len) * k, y: (dy / len) * k }
 }
 
 function drawBomb(c: CanvasRenderingContext2D, r: number, t: number) {
@@ -283,46 +304,85 @@ class FruitSlash extends BaseGame implements Game {
       if (fr.y > this.H + 130 || fr.life <= 0) fr.alive = false
     }
 
-    // 命中判定（炸弹无手速门槛；水果要够快；补刀要换刀方向 + 时间窗）
+    // 手部轨迹先统一算好（含手掌前移）：命中判定与“贴住计时”共用，避免两只手互相抵消
+    const present = this.players.filter((p) => p.body).length
+    const solo = present <= 1
+    const minSpeed = this.cfg.minSpeed * SPEED_K
+    const paths: {
+      pi: number
+      stroke: number
+      speed: number
+      ax: number
+      ay: number
+      zx: number
+      zy: number
+      swipe: number
+      dir: { x: number; y: number }
+    }[] = []
     for (const pv of this.players) {
       const b = pv.body
       if (!b) continue
-      const pi = pv.id
-      const hands = [
-        { v: b.lHandV, c: pv.lHand },
-        { v: b.rHandV, c: pv.rHand },
-      ]
       for (let hi = 0; hi < 2; hi++) {
-        const h = hands[hi]
-        const strokeId = this.updateStroke(pi, hi, h.v, h.c.trail)
-        if (h.c.trail.length < 2) continue
-        const a = h.c.trail[h.c.trail.length - 2]
-        const z = h.c.trail[h.c.trail.length - 1]
-        const swipe = Math.atan2(z.y - a.y, z.x - a.x)
-        const dirLen = Math.hypot(z.x - a.x, z.y - a.y) || 1
-        const dir = { x: (z.x - a.x) / dirLen, y: (z.y - a.y) / dirLen }
-        for (const fr of this.fruits) {
-          if (!fr.alive || fr.owner !== pi) continue
-          if (fr.bomb) {
-            // 炸弹：手碰到就爆（判定更宽松），无手速门槛
-            if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r * 0.9 + HAND_R * 0.5)) this.explode(fr)
-            continue
-          }
-          if (fr.gen === 0) {
-            if (h.v < this.cfg.minSpeed) continue
-            if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + HAND_R * 0.45)) {
-              this.cutFruit(fr, pi, swipe, dir, h.v, strokeId)
-            }
-          } else {
-            // 补刀：块龄窗口 + 必须换刀方向
-            if (h.v < this.cfg.minSpeed) continue
-            if (fr.gen >= 2) continue
-            if (fr.age < RECUT_MIN || fr.age > RECUT_MAX) continue
-            if (fr.stroke === strokeId) continue
-            if (segHit(a.x, a.y, z.x, z.y, fr.x, fr.y, fr.r + HAND_R * 0.45)) {
-              this.recutPiece(fr, pi, swipe, dir, h.v, strokeId)
-            }
-          }
+        const c = hi === 0 ? pv.lHand : pv.rHand
+        const speed = hi === 0 ? b.lHandV : b.rHandV
+        const strokeId = this.updateStroke(pv.id, hi, speed, c.trail)
+        if (c.trail.length < 2) continue
+        // 判定点 = 手掌中心（手腕沿前臂方向外移），与孩子看到的手一致
+        const off = palmOffset(b, hi === 0 ? 0 : 1)
+        const ox = off.x * this.W
+        const oy = off.y * this.H
+        const a = c.trail[c.trail.length - 2]
+        const z = c.trail[c.trail.length - 1]
+        const ax = a.x + ox
+        const ay = a.y + oy
+        const zx = z.x + ox
+        const zy = z.y + oy
+        const len = Math.hypot(zx - ax, zy - ay) || 1
+        paths.push({
+          pi: pv.id,
+          stroke: strokeId,
+          speed,
+          ax,
+          ay,
+          zx,
+          zy,
+          swipe: Math.atan2(zy - ay, zx - ax),
+          dir: { x: (zx - ax) / len, y: (zy - ay) / len },
+        })
+      }
+    }
+
+    // 贴住计时：任意一只手压在上面就累加，全部离开才衰减（慢手兜底，不靠挥速）
+    for (const fr of this.fruits) {
+      if (!fr.alive || fr.bomb) continue
+      const touching = paths.some((p) => segHit(p.ax, p.ay, p.zx, p.zy, fr.x, fr.y, fr.r + HAND_R))
+      fr.touchT = touching ? fr.touchT + this.lastRealDt : Math.max(0, fr.touchT - this.lastRealDt * 3)
+    }
+
+    // 命中判定（炸弹无手速门槛；水果要够快或贴住够久；补刀要换刀方向 + 时间窗）
+    for (const p of paths) {
+      const fast = p.speed >= minSpeed
+      for (const fr of this.fruits) {
+        if (!fr.alive) continue
+        // 单人时忽略归属：误检出第二个人也不会让自己的水果变成“切不动”
+        if (!solo && fr.owner !== p.pi) continue
+        // 炸弹判定单独收窄：不该因为放宽水果手感而让人更容易误炸
+        if (fr.bomb) {
+          if (segHit(p.ax, p.ay, p.zx, p.zy, fr.x, fr.y, fr.r * 0.9 + HAND_R * 0.5)) this.explode(fr)
+          continue
+        }
+        const hit = segHit(p.ax, p.ay, p.zx, p.zy, fr.x, fr.y, fr.r + HAND_R)
+        if (fr.gen === 0) {
+          if (!hit) continue
+          if (!fast && fr.touchT < TOUCH_HOLD) continue
+          this.cutFruit(fr, p.pi, p.swipe, p.dir, Math.max(p.speed, minSpeed), p.stroke)
+        } else {
+          // 补刀：块龄窗口 + 必须换刀方向
+          if (!hit || !fast) continue
+          if (fr.gen >= 2) continue
+          if (fr.age < RECUT_MIN || fr.age > RECUT_MAX) continue
+          if (fr.stroke === p.stroke) continue
+          this.recutPiece(fr, p.pi, p.swipe, p.dir, p.speed, p.stroke)
         }
       }
     }
@@ -424,6 +484,7 @@ class FruitSlash extends BaseGame implements Game {
         wet: type.juice,
         dripT: 0,
         owner: pi,
+        touchT: 0,
       })
       if (!isBomb) this.stats[pi].thrown++
     }
@@ -529,6 +590,7 @@ class FruitSlash extends BaseGame implements Game {
         wet: Math.min(1, fr.wet + fr.type.juice * 0.5),
         dripT: 0,
         owner: fr.owner,
+        touchT: 0,
       })
     }
   }
