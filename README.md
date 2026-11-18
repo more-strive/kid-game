@@ -1,8 +1,8 @@
 # 动动乐园 · 复刻版
 
-用电脑摄像头玩的儿童体感游戏合集，复刻 [dongdongpark.com](https://dongdongpark.com) 的 **110 个游戏**，玩法规则与难度参数按原站真实规则逆向对齐（80 个专属实现 + 4 个原型复用 + 26 个通用兜底）。
+用电脑摄像头玩的儿童体感游戏合集，复刻 [dongdongpark.com](https://dongdongpark.com) 的 **110 个游戏**，玩法规则与难度参数按原站真实规则逆向对齐（106 个专属实现 + 4 个原型复用，全部有独立规则，无通用兜底）。
 
-技术栈：**Vite + Vue 3 + TypeScript + Element Plus + UnoCSS**，姿态识别用 **MediaPipe Tasks Vision**（Pose Landmarker，本地 wasm）。
+技术栈：**Vite + Vue 3 + TypeScript + Element Plus + UnoCSS**，识别用 **MediaPipe Tasks Vision**（Pose/Hand/Face Landmarker，本地 wasm）+ 麦克风音量检测，详情页动作示范用 **Three.js**（懒加载）。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -28,34 +28,41 @@ pnpm preview  # 本地预览构建产物
 ```
 src/
 ├── core/                   体感引擎
-│   ├── pose.ts             PoseTracker：摄像头 → 33 个关键点 → Body（含速度/跳/蹲/举手等派生）
+│   ├── pose.ts             PoseTracker：摄像头 → 33 个关键点 → Body（含速度/跳/蹲/举手等派生），
+│   │                       另含惰性加载的手部（21 点）/脸部（blendShapes）识别管线与双人席位稳定
 │   ├── sim.ts              虚拟人体：不接摄像头也能演示和调试
 │   ├── engine.ts           GameHost：倒计时、计时、计分、星级、暂停、主循环
 │   ├── base.ts             BaseGame：玩家光标、骨架叠加、飘字、粒子、碰撞工具
 │   ├── draw.ts             绘制工具（圆角矩形、描边字、星星、圆环、粒子、骨架连线）
 │   ├── sprites.ts          道具/图标贴图加载，未就绪或缺失时由调用方回退矢量绘制
 │   ├── audio.ts            WebAudio 合成音效 + 中文语音播报
+│   ├── mic.ts              MicKit：麦克风音量检测（RMS 减噪声底 → 0~1），吹气/喊话类游戏用
+│   ├── intro-pose.ts       详情页动作库：16 个可循环动作 + 每游戏编排表，复用 sim 的 33 点合成
+│   ├── intro3d.ts          详情页 3D 示范：three.js 积木小人，由 intro-pose 关键点驱动（零模型零素材）
 │   └── types.ts            Body / PoseFrame / Game / GameContext
 ├── games/
 │   ├── index.ts            注册表：slug → 实现（专属 or 原型），并按实现绑定场景背景
-│   ├── generic.ts          通用玩法（剩余 26 个未专门实现的游戏用它兜底）
+│   ├── generic.ts          通用玩法兜底（仅在专属实现动态加载失败时降级，正常不触发）
 │   ├── impl/               80 个游戏的专属实现 + counter-kit.ts（计数类共用检测器）
 │   └── proto/              玩法原型引擎：whack（打地鼠）/ catch（接礼物·算一算·拼字）
 ├── data/games.ts           110 个游戏的元数据（名称/玩法/年龄/运动量/类型/时长/拿星线）
 ├── router/                 路由：/ 、/games 、/game/:slug 、/play/:slug 、/check
 ├── views/                  Home / Games / Detail / Play / Check
 ├── styles/                 全局样式
-└── components/             GameCard / StarRow
+└── components/             GameCard / StarRow / Intro3D（详情页 3D 动作示范，滚入视口才加载）
 public/
-├── models/pose_landmarker_lite.task   姿态模型（5.5MB / 5777746 字节，本地加载）
-├── wasm/                              MediaPipe wasm（15MB，本地加载，不依赖 CDN）
+├── models/                            3 个模型：姿态 5.5MB（常驻）+ 手部 7.5MB / 脸部 3.6MB（对应游戏惰性加载）
+├── wasm/                              MediaPipe wasm（14.7MB，本地加载，不依赖 CDN）
 ├── icons/games/                       110 个游戏图标（OpenMoji 矢量，按 slug 命名）
 ├── icons/items/                       道具贴图（地鼠/星星/礼物/球类等 23 个）
 ├── bg/                                4 张场景装饰背景（garden/stadium/stage/space）
-└── sfx/                               12 个音效（Kenney CC0）
+└── sfx/                               13 个音效（Kenney CC0）
 scripts/
 ├── fetch-icons.py                     批量拉取游戏图标（可重复执行，已存在的跳过）
-└── gen-bg.py                          生成场景装饰背景 SVG
+├── gen-bg.py                          生成场景装饰背景 SVG
+└── precompress.mjs                    构建产物预压缩 .gz（配合 nginx gzip_static）
+docs/
+└── nginx.conf                         参考配置（gzip_static、wasm MIME）
 ```
 
 ## 素材
@@ -67,10 +74,10 @@ scripts/
 | 游戏图标（卡片、列表） | [OpenMoji](https://openmoji.org) | CC BY-SA 4.0 | 110 个 / 327KB |
 | 游戏内道具贴图 | OpenMoji | CC BY-SA 4.0 | 23 个 / 68KB |
 | 场景装饰背景 | 本项目脚本生成 | 随项目 | 4 张 / 26KB |
-| 音效 | [Kenney](https://kenney.nl) Interface Sounds + Music Jingles | CC0 | 12 个 / 104KB |
+| 音效 | [Kenney](https://kenney.nl) Interface Sounds + Music Jingles | CC0 | 13 个 / 104KB |
 | 背景音乐 | `audio.ts` WebAudio 实时合成 | 随项目 | 0 字节 |
 
-自产素材合计不到 0.6MB；真正占体积的是姿态识别的运行时：`public/wasm/` 15MB + `public/models/` 5.5MB。
+自产素材合计不到 0.6MB；真正占体积的是识别运行时：`public/wasm/` 14.7MB + `public/models/` 16.6MB（姿态模型常驻，手部/脸部模型只被用到对应管线的游戏下载）。
 
 > `public/wasm/` 里只保留 `vision_wasm_internal.{js,wasm}`。MediaPipe 包同时提供 `vision_wasm_module_internal.*`（ES module 版，另外 14.7MB），但 `FilesetResolver.forVisionTasks(base)` 的 `isModule` 参数默认 `false`，运行时永远不会加载它，所以没有拷进来。
 
@@ -88,15 +95,19 @@ scripts/
 ## 体感引擎原理
 
 1. `getUserMedia` 拿摄像头画面，隐藏的 `<video>` 铺满舞台（`object-fit: cover` + 镜像）。
-2. `PoseLandmarker.detectForVideo()` 每帧输出 33 个归一化关键点，支持同时 2 人。
+2. `PoseLandmarker.detectForVideo()` 每帧输出 33 个归一化关键点，支持同时 2 人；席位带滞回——单人丢几帧或两人交叉都不会互换编号，只有持续丢失超过阈值才释放身份。
 3. `PoseTracker` 做四件事：**镜像 → 16:9 裁剪换算 → 指数平滑 → 派生特征**：
    - `lHandV / rHandV`：手部速度（归一化/秒），用来识别「挥」「切」「打」
    - `jumping`：脚踝相对站立基准抬高
    - `squat`：膝关节角度 + 髋部下降
    - `armsUp`、`feetSpread`、`handAboveHead` 等
-4. 每个游戏只做两件事：`tick(frame, dt)` 更新逻辑、`paint(ctx)` 绘制。逻辑坐标系固定 `1280×720`，与窗口尺寸解耦。
-5. Canvas 透明叠加在视频上，所以孩子能一边看自己一边玩。
-6. 检测可视化：`drawSkeleton()` 按 BlazePose 33 点连线画出骨架（只画 `visibility ≥ 0.5` 的点，用玩家颜色），手部用 20px 半透明圆环 + 玩家色圆点标出，孩子能马上确认「我被看到了」。
+4. 三条**按需启用**的增量管线，游戏在工厂里 opt-in，模型与权限都只加载一次：
+   - 手部 `ctx.enableHands()`：HandLandmarker 21 点，融合进 `Body.lHandDet/rHandDet`，出拳/抓握/手指精确定位不再靠姿态代理
+   - 脸部 `ctx.enableFace()`：FaceLandmarker blendShapes → `Body.face`（张嘴/嘟嘴/微笑等真实表情）
+   - 麦克风 `ctx.mic.ensure()`：`mic.level` 输出 0~1 音量（RMS 减噪声底），吹气/喊话类游戏用
+5. 每个游戏只做两件事：`tick(frame, dt)` 更新逻辑、`paint(ctx)` 绘制。逻辑坐标系固定 `1280×720`，与窗口尺寸解耦。
+6. Canvas 透明叠加在视频上，所以孩子能一边看自己一边玩。
+7. 检测可视化：`drawSkeleton()` 按 BlazePose 33 点连线画出骨架（只画 `visibility ≥ 0.5` 的点，用玩家颜色），手部用 20px 半透明圆环 + 玩家色圆点标出，孩子能马上确认「我被看到了」。
 
 ## 游戏覆盖情况
 
@@ -104,9 +115,9 @@ scripts/
 
 | 实现方式 | 数量 | 说明 |
 | --- | --- | --- |
-| 专属实现 `impl/` | 80 | 每个游戏一套独立规则，数值按原站逆向结果对齐 |
+| 专属实现 `impl/` | 106 | 每个游戏一套独立规则，数值按原站逆向结果对齐 |
 | 玩法原型 `proto/` | 4 | 打地鼠走 `whack.ts`；圣诞接礼物、算一算、拼字接接乐走 `catch.ts` |
-| 通用兜底 `generic.ts` | 26 | 按玩法类型自动选「接/打/跳/摆」原型，保证能玩 |
+| 通用兜底 `generic.ts` | 0 | 仅在专属实现动态加载失败时降级，正常情况不会触发 |
 
 `src/games/impl/counter-kit.ts` 不是游戏，是计数类游戏（跳绳/深蹲/高抬腿/开合跳/体能闯关/砍木头等）共用的检测器，移植自原站 counter 引擎。
 
@@ -142,19 +153,19 @@ scripts/
 
 ### 构建优化
 
-`pnpm run build` = 类型检查 → `vite build` → `scripts/precompress.mjs`（生成 `.gz`）。当前干净构建约 **22MB 产物 + 5.1MB 预压缩文件**，首屏三个文件 gzip 后合计约 **100KB**。
+`pnpm run build` = 类型检查 → `vite build` → `scripts/precompress.mjs`（生成 `.gz`）。当前干净构建约 **33.6MB 产物 + 4.9MB 预压缩文件**（大头是 14.7MB wasm + 16.6MB 三个模型，`.task` 本身是 zip 不再压），首屏三个文件 gzip 后合计约 **100KB**。
 
 | 项目 | 优化前 | 优化后 |
 | --- | --- | --- |
-| 入口 JS `index-*.js` | 1000KB | 145KB（gzip 49KB） |
-| 入口 CSS `index-*.css` | 387KB | 65KB（gzip 12KB） |
-| `dist/assets` 合计 | 2.4MB | 1.4MB |
+| 入口 JS `index-*.js` | 1000KB | 145KB（gzip 50KB） |
+| 入口 CSS `index-*.css` | 387KB | 66KB（gzip 12KB） |
+| `dist/assets` 合计 | 2.4MB | 2.2MB（含懒加载的 three 725KB） |
 
 做了三件事：
 
 1. **Element Plus 按需引入**（`src/main.ts`）：只注册实际用到的 `ElSelect/ElOption/ElInput/ElEmpty` 并引对应 `es/components/<name>/style/css`。全量 `use(ElementPlus)` + `dist/index.css` 曾把 ~700KB JS 和 ~330KB CSS 塞进入口包。新增组件时记得在这里补 import。
-2. **Vue 全家桶单独成块**（`vite.config.ts` 的 `codeSplitting.groups`）：`vendor-vue` 走长效缓存，业务代码迭代时用户只重下 145KB 的入口包。只圈 Vue 生态，不要把 `node_modules` 全量塞进公共块——mediapipe 是动态引入的，被并进去会拖慢首屏。
-3. **产物预压缩**（`scripts/precompress.mjs`）：给 js/css/svg/wasm 生成 `.gz`，14.7MB 的 wasm 压到 4.2MB。配合 nginx `gzip_static on` 直接读文件，省掉每个请求现压 14MB 的 CPU 开销。
+2. **Vue 全家桶单独成块**（`vite.config.ts` 的 `codeSplitting.groups`）：`vendor-vue` 走长效缓存，业务代码迭代时用户只重下 145KB 的入口包。只圈 Vue 生态，不要把 `node_modules` 全量塞进公共块——mediapipe 是动态引入的，被并进去会拖慢首屏。`vendor-three`（725KB / gzip 181KB）同理：只有详情页的 3D 动作示范用到，动态 import + IntersectionObserver 滚入视口才加载，永不进首屏，也不与 PlayView 的 MediaPipe GPU 推理共存。
+3. **产物预压缩**（`scripts/precompress.mjs`）：给 js/css/svg/wasm 等文本类资源生成 `.gz`（`.task` 模型本身是 zip，压了反而更大，跳过），14.7MB 的 wasm 压到 4.0MB。配合 nginx `gzip_static on` 直接读文件，省掉每个请求现压 14MB 的 CPU 开销。
 
 服务器侧用 `docs/nginx.conf`：`gzip_static on` 需要 nginx 编入 `http_gzip_static_module`（`nginx -V` 确认；没有就删掉那一行，回退到 `gzip on` 现压）。wasm 必须有 `application/wasm` MIME，否则 `WebAssembly.instantiateStreaming` 会拒绝加载。
 
@@ -184,10 +195,10 @@ curl -sI https://game.yft.design/play/yoga | head -1
 
 ## 已知限制
 
-- 摄像头画面只在本机推理，不上传；首次进入需加载 15MB wasm + 5.5MB 模型（都在 `public/` 下，离线可用），弱网首局会等得久。
+- 摄像头画面只在本机推理，不上传；首次进入需加载 14.7MB wasm + 5.5MB 姿态模型（都在 `public/` 下，离线可用），弱网首局会等得久；启用手部/脸部管线的游戏会再按需加载 7.5MB / 3.6MB 模型。
 - 难度固定 easy 档：引擎里 `GameHost.difficulty` 支持 0/1/2 三档，但界面还没有切换入口，所有游戏都按 easy 档参数和星级线跑。
-- 少数游戏（吹蜡烛、吹蒲公英、悄悄话大声喊、音高爬梯）在原站需要麦克风，此版本暂用动作替代，未接麦克风输入。
-- 部分手势是用姿态代理的：张嘴→手贴头、出拳→挥手、音高→手的高低。站点有 face / hand 关键点时会更准。
+- 吹气/喊话类游戏（吹蜡烛、吹蒲公英、悄悄话大声喊、吹气球、呼吸练习、动物模仿）已接麦克风，权限在首次进入对应游戏时才申请；音高爬梯仍以手的高度代理音高。
+- 手部/脸部关键点已接入（各游戏在工厂里 opt-in，目前 12 个游戏启用），张嘴/嘟嘴走 blendShapes、出拳/抓握走手部 21 点；个别动作仍用姿态代理（如音高的高低）。
 - 参数已按原站数值对齐，但手感（生成速度、目标大小、手速阈值换算）仍需真机试玩校准。
 
 ## 开源协议
