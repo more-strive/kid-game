@@ -28,6 +28,15 @@ const P = {
 
 const SMOOTH = 0.45
 
+/** 槽位匹配门限：与上一帧同一人的预测中心距离超过这个值就不认为是同一个人（归一化坐标） */
+const MATCH_GATE = 0.18
+/** 短暂丢帧时继续沿用上一次的骨架，避免编号在 0/1 之间抖动（毫秒，与 detect 的 now 同单位） */
+const HOLD_T = 350
+/** 超过这么久没再见到人，才释放槽位；期间回来仍算同一个人（毫秒） */
+const SLOT_LOST = 1000
+/** 槽位被新人顶替前的最短静默时间，防止误检槽位长期占位（毫秒） */
+const STEAL_T = 300
+
 /** 部署到子路径（GitHub Pages 的 /<repo>/）时，静态资源必须跟着 base 走 */
 const BASE = import.meta.env.BASE_URL
 
@@ -48,6 +57,23 @@ interface Track {
   t: number
   footBase: number
   hipBase: number
+  /** 平滑后的躯干中心，用于跨帧匹配 */
+  cx: number
+  cy: number
+  /** 中心速度（归一化/秒），用于预测下一帧位置，孩子快速走动时匹配更稳 */
+  vx: number
+  vy: number
+  /** 最近一次真正检测到的时刻 */
+  seen: number
+  /** 最近一次发布的骨架，短暂丢帧时补位用 */
+  body?: Body
+}
+
+/** 一帧检测结果（已换算到屏幕坐标，未平滑） */
+interface Det {
+  lm: LM[]
+  cx: number
+  cy: number
 }
 
 export class PoseTracker {
@@ -218,7 +244,6 @@ export class PoseTracker {
       return { t: now, dt: 0, bodies: [] }
     }
     const bodies: Body[] = []
-    const seen = new Set<number>()
 
     // 摄像头画面按 16:9 cover 显示，坐标同步做裁剪换算
     const vw = v.videoWidth || 1280
@@ -236,22 +261,36 @@ export class PoseTracker {
       oy = (1 - fy) / 2
     }
 
-    res.landmarks.forEach((raw, i) => {
-      const key = i
-      seen.add(key)
-      const prev = this.tracks.get(key)
-      // 1. cover 裁剪 + 镜像 + 平滑
-      const lm: LM[] = raw.map((p, idx) => {
+    // 一帧内先把所有骨架换算到屏幕坐标（cover 裁剪 + 镜像），先不平滑
+    const dets: Det[] = res.landmarks.map((raw) => {
+      const lm: LM[] = raw.map((p) => {
         const nx = (p.x - ox) / fx
         const ny = (p.y - oy) / fy
         const x = this.mirrored ? 1 - nx : nx
+        return { x, y: ny, z: p.z, visibility: p.visibility ?? 1 }
+      })
+      return {
+        lm,
+        cx: (lm[P.lShoulder].x + lm[P.rShoulder].x + lm[P.lHip].x + lm[P.rHip].x) / 4,
+        cy: (lm[P.lShoulder].y + lm[P.rShoulder].y + lm[P.lHip].y + lm[P.rHip].y) / 4,
+      }
+    })
+    // 关键：编号跟着“人”走，不跟 MediaPipe 的返回顺序、也不再按 x 重排。
+    // 否则两个孩子左右交叉一次，各游戏的分数/连击/进度就会瞬间串位。
+    const assign = this.matchSlots(dets, now)
+    const live = new Map<number, Body>()
+    for (const [di, si] of assign) {
+      const det = dets[di]
+      const prev = this.tracks.get(si)
+      // 平滑用同一槽位上一帧的骨架（按人平滑；混用别人的关键点会抖动、手速也会误判）
+      const lm: LM[] = det.lm.map((p, idx) => {
         const q = prev?.lm[idx]
-        if (!q) return { x, y: ny, z: p.z, visibility: p.visibility ?? 1 }
+        if (!q) return p
         return {
-          x: q.x + (x - q.x) * SMOOTH,
-          y: q.y + (ny - q.y) * SMOOTH,
+          x: q.x + (p.x - q.x) * SMOOTH,
+          y: q.y + (p.y - q.y) * SMOOTH,
           z: p.z,
-          visibility: p.visibility ?? 1,
+          visibility: p.visibility,
         }
       })
       const pt = (idx: number): Pt => ({ x: lm[idx].x, y: lm[idx].y })
@@ -285,15 +324,13 @@ export class PoseTracker {
       const footBase = prev ? Math.max(prev.footBase * 0.995, footY) : footY
       const hipBase = prev ? prev.hipBase * 0.97 + hipC.y * 0.03 : hipC.y
 
-      this.tracks.set(key, { lm, t: now, footBase, hipBase })
-
       const kneeAvg = (angle(lHip, pt(P.lKnee), lFoot) + angle(rHip, pt(P.rKnee), rFoot)) / 2
       const armsUp = lHand.y < shoulderC.y - 0.015 && rHand.y < shoulderC.y - 0.015
       const squat = kneeAvg < 133 || hipC.y > hipBase + 0.07
       const jumping = Math.min(lFoot.y, rFoot.y) < footBase - 0.05 * (scale / 0.5)
 
-      bodies.push({
-        id: i,
+      const body: Body = {
+        id: si,
         visible: true,
         lm,
         lHand,
@@ -322,12 +359,43 @@ export class PoseTracker {
         feetSpread: Math.abs(lFoot.x - rFoot.x),
         lHandAboveHead: lHand.y < head.y,
         rHandAboveHead: rHand.y < head.y,
+      }
+      // 中心速度用于下一帧的预测位置；断帧太久就把速度清掉，避免预测飞出去
+      const pdt = prev ? (now - prev.t) / 1000 : 0
+      const fresh = !!prev && pdt > 0 && pdt < 0.25
+      this.tracks.set(si, {
+        lm,
+        t: now,
+        footBase,
+        hipBase,
+        cx: det.cx,
+        cy: det.cy,
+        vx: fresh ? (det.cx - prev!.cx) / Math.max(0.016, pdt) : 0,
+        vy: fresh ? (det.cy - prev!.cy) / Math.max(0.016, pdt) : 0,
+        seen: now,
+        body,
       })
-    })
+      live.set(si, body)
+    }
 
-    for (const k of [...this.tracks.keys()]) if (!seen.has(k)) this.tracks.delete(k)
-    bodies.sort((a, b) => a.center.x - b.center.x)
-    bodies.forEach((b, i) => (b.id = i))
+    // 4. 掉帧补位 + 过期释放：短暂丢失（< HOLD_T）仍按原位置发布，
+    //    免得一个人眨眼丢一帧就把另一个人的编号挤到 0；超过 SLOT_LOST 才真正放掉身份。
+    for (const [si, tr] of [...this.tracks]) {
+      const gone = now - tr.seen
+      if (gone > SLOT_LOST) {
+        this.tracks.delete(si)
+        continue
+      }
+      if (!live.has(si) && gone <= HOLD_T && tr.body) live.set(si, tr.body)
+    }
+
+    // 5. 按槽位顺序发布：id 即阵位下标（与 syncPlayers / f.bodies[i] 的位置语义一致）
+    for (let si = 0; si < this.numPoses; si++) {
+      const b = live.get(si)
+      if (!b) continue
+      b.id = bodies.length
+      bodies.push(b)
+    }
     // 手部/脸部检测（按需开启；坐标用与姿态相同的 cover 裁剪 + 镜像换算）
     if (this.handsOn && this.handLm && bodies.length) {
       try {
@@ -346,6 +414,69 @@ export class PoseTracker {
       }
     }
     return { t: now, dt: 1 / 30, bodies }
+  }
+
+  /**
+   * 把本帧检出的骨架分配给已有槽位（= 玩家编号）。
+   * 用“上一帧中心 + 速度预测”做最近邻匹配，而不是按 x 排序：
+   * 按 x 排序在两人交叉、或误检到第三个影子时会瞬间交换编号，各游戏按编号存的
+   * 分数/连击/进度就会串到另一个人身上（站点框架给的是稳定席位，见 _reverse 里
+   * players[i] + present 的用法）。
+   */
+  private matchSlots(dets: Det[], now: number) {
+    const pair: { d: number; di: number; si: number }[] = []
+    for (let di = 0; di < dets.length; di++) {
+      for (const [si, tr] of this.tracks) {
+        const dt = Math.min(0.25, Math.max(0, (now - tr.t) / 1000))
+        const px = tr.cx + tr.vx * dt
+        const py = tr.cy + tr.vy * dt
+        const d = Math.hypot(dets[di].cx - px, dets[di].cy - py)
+        if (d <= MATCH_GATE) pair.push({ d, di, si })
+      }
+    }
+    pair.sort((a, b) => a.d - b.d)
+    const out = new Map<number, number>()
+    const usedDet = new Set<number>()
+    const usedSlot = new Set<number>()
+    for (const p of pair) {
+      if (usedDet.has(p.di) || usedSlot.has(p.si)) continue
+      out.set(p.di, p.si)
+      usedDet.add(p.di)
+      usedSlot.add(p.si)
+    }
+    // 没匹配上的是新人：优先空槽；槽满时顶替最久没见的（真实的人走了，别被幽灵槽位挡着）。
+    // 同一帧同时出现两个新人时按 x 从左到右占槽，保持“0 号在左”的空间约定。
+    const fresh = dets
+      .map((d, di) => ({ di, x: d.cx }))
+      .filter((v) => !usedDet.has(v.di))
+      .sort((a, b) => a.x - b.x)
+    for (const { di } of fresh) {
+      let slot = -1
+      for (let si = 0; si < this.numPoses; si++) {
+        if (usedSlot.has(si) || this.tracks.has(si)) continue
+        slot = si
+        break
+      }
+      if (slot < 0) {
+        let oldest = -1
+        let age = STEAL_T
+        for (let si = 0; si < this.numPoses; si++) {
+          if (usedSlot.has(si)) continue
+          const tr = this.tracks.get(si)
+          if (!tr) continue
+          if (now - tr.seen > age) {
+            age = now - tr.seen
+            oldest = si
+          }
+        }
+        slot = oldest
+      }
+      if (slot < 0) continue
+      this.tracks.delete(slot)
+      out.set(di, slot)
+      usedSlot.add(slot)
+    }
+    return out
   }
 
   /** 手 → 就近绑定到某玩家的屏幕左/右手（覆盖 lHandDet/rHandDet） */
