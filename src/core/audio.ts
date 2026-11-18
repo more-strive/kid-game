@@ -45,6 +45,8 @@ export class AudioKit {
   private master: GainNode | null = null
   muted = false
   private voiceOn = true
+  /** 最近一次播报（用于同句去重） */
+  private lastSay = { text: '', at: 0 }
   private buffers = new Map<SfxName, AudioBuffer>()
   private loading: Promise<void> | null = null
   private sfxGainValue = 0.55
@@ -341,10 +343,21 @@ export class AudioKit {
     else this.stopBgm()
   }
 
+  /** 同一句话在 600ms 内只播一次（双人同时触发同一条口令时去重） */
+  private dupSay(text: string) {
+    const at = performance.now()
+    if (text === this.lastSay.text && at - this.lastSay.at < 600) return true
+    this.lastSay = { text, at }
+    return false
+  }
+
   speak(text: string, rate = 1) {
     if (this.muted || !this.voiceOn) return
     const synth = window.speechSynthesis
     if (!synth) return
+    // 同一句话极短时间内重复触发只播一次：双人时两边会同时/先后触发同一条口令，
+    // speechSynthesis.cancel() 会把上一句掐掉重念，听起来就是结巴或重复两遍。
+    if (this.dupSay(text)) return
     try {
       synth.cancel()
       const u = new SpeechSynthesisUtterance(text)
@@ -360,6 +373,7 @@ export class AudioKit {
   /** 英文播报（英语摸摸看这类听力游戏用），与 speak 共用静音/语音开关 */
   speakEn(text: string, rate = 1) {
     if (this.muted || !this.voiceOn) return
+    if (this.dupSay(text)) return
     const synth = window.speechSynthesis
     if (!synth) return
     try {

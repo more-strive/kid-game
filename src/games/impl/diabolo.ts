@@ -164,6 +164,8 @@ class Diabolo {
 class DiaboloGame extends BaseGame implements Game {
   cfg = DIFF[this.ctx.difficulty] ?? DIFF[1]
   ds = [new Diabolo(), new Diabolo()]
+  /** 全局口令只播一次（对齐站点：转满提示用闭包标志位 B 保证整局只念一次） */
+  private fullSaid = false
   banner = ''
   bannerT = 0
   /** 总分（转速分连续累计 + 花样 +10，显示取整） */
@@ -202,7 +204,10 @@ class DiaboloGame extends BaseGame implements Game {
             this.ctx.audio.combo() // chime + 金色光环
             this.banner = '转满啦！双手往上抛！'
             this.bannerT = 2
-            this.ctx.speak('转满啦！双手往上抛！')
+            if (!this.fullSaid) {
+              this.fullSaid = true
+              this.ctx.speak('转满啦！双手往上抛！')
+            }
           } else if (tip === 'tilt') {
             this.ctx.audio.play('hit', 0.7, 0.7) // oops
             this.banner = '歪掉啦！'
