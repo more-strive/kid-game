@@ -38,7 +38,8 @@ src/
 │   ├── audio.ts            WebAudio 合成音效 + 中文语音播报
 │   ├── mic.ts              MicKit：麦克风音量检测（RMS 减噪声底 → 0~1），吹气/喊话类游戏用
 │   ├── intro-pose.ts       详情页动作库：16 个可循环动作 + 每游戏编排表，复用 sim 的 33 点合成
-│   ├── intro3d.ts          详情页 3D 示范：three.js 积木小人，由 intro-pose 关键点驱动（零模型零素材）
+│   ├── intro3d.ts          详情页 3D 示范：Xbot 骨骼蒙皮人形，由 intro-pose 关键点做骨骼 FK 驱动；
+│   │                       模型加载失败回退程序生成的积木小人
 │   └── types.ts            Body / PoseFrame / Game / GameContext
 ├── games/
 │   ├── index.ts            注册表：slug → 实现（专属 or 原型），并按实现绑定场景背景
@@ -56,6 +57,7 @@ public/
 ├── icons/games/                       110 个游戏图标（OpenMoji 矢量，按 slug 命名）
 ├── icons/items/                       道具贴图（地鼠/星星/礼物/球类等 23 个）
 ├── bg/                                4 张场景装饰背景（garden/stadium/stage/space）
+├── intro/xbot.glb                     详情页 3D 示范人形（597KB meshopt，Mixamo 骨架，可同名替换）
 └── sfx/                               13 个音效（Kenney CC0）
 scripts/
 ├── fetch-icons.py                     批量拉取游戏图标（可重复执行，已存在的跳过）
@@ -74,6 +76,7 @@ docs/
 | 游戏图标（卡片、列表） | [OpenMoji](https://openmoji.org) | CC BY-SA 4.0 | 110 个 / 327KB |
 | 游戏内道具贴图 | OpenMoji | CC BY-SA 4.0 | 23 个 / 68KB |
 | 场景装饰背景 | 本项目脚本生成 | 随项目 | 4 张 / 26KB |
+| 3D 示范人形 | three.js 官方示例库 Xbot（Mixamo 骨架，meshopt 压缩） | MIT | 1 个 / 597KB |
 | 音效 | [Kenney](https://kenney.nl) Interface Sounds + Music Jingles | CC0 | 13 个 / 104KB |
 | 背景音乐 | `audio.ts` WebAudio 实时合成 | 随项目 | 0 字节 |
 
@@ -153,18 +156,18 @@ docs/
 
 ### 构建优化
 
-`pnpm run build` = 类型检查 → `vite build` → `scripts/precompress.mjs`（生成 `.gz`）。当前干净构建约 **33.6MB 产物 + 4.9MB 预压缩文件**（大头是 14.7MB wasm + 16.6MB 三个模型，`.task` 本身是 zip 不再压），首屏三个文件 gzip 后合计约 **100KB**。
+`pnpm run build` = 类型检查 → `vite build` → `scripts/precompress.mjs`（生成 `.gz`）。当前干净构建约 **34.2MB 产物 + 5MB 预压缩文件**（大头是 14.7MB wasm + 16.6MB 三个识别模型，`.task` 本身是 zip 不再压），首屏三个文件 gzip 后合计约 **100KB**。
 
 | 项目 | 优化前 | 优化后 |
 | --- | --- | --- |
 | 入口 JS `index-*.js` | 1000KB | 145KB（gzip 50KB） |
 | 入口 CSS `index-*.css` | 387KB | 66KB（gzip 12KB） |
-| `dist/assets` 合计 | 2.4MB | 2.2MB（含懒加载的 three 725KB） |
+| `dist/assets` 合计 | 2.4MB | 2.3MB（含懒加载的 three 815KB） |
 
 做了三件事：
 
 1. **Element Plus 按需引入**（`src/main.ts`）：只注册实际用到的 `ElSelect/ElOption/ElInput/ElEmpty` 并引对应 `es/components/<name>/style/css`。全量 `use(ElementPlus)` + `dist/index.css` 曾把 ~700KB JS 和 ~330KB CSS 塞进入口包。新增组件时记得在这里补 import。
-2. **Vue 全家桶单独成块**（`vite.config.ts` 的 `codeSplitting.groups`）：`vendor-vue` 走长效缓存，业务代码迭代时用户只重下 145KB 的入口包。只圈 Vue 生态，不要把 `node_modules` 全量塞进公共块——mediapipe 是动态引入的，被并进去会拖慢首屏。`vendor-three`（725KB / gzip 181KB）同理：只有详情页的 3D 动作示范用到，动态 import + IntersectionObserver 滚入视口才加载，永不进首屏，也不与 PlayView 的 MediaPipe GPU 推理共存。
+2. **Vue 全家桶单独成块**（`vite.config.ts` 的 `codeSplitting.groups`）：`vendor-vue` 走长效缓存，业务代码迭代时用户只重下 145KB 的入口包。只圈 Vue 生态，不要把 `node_modules` 全量塞进公共块——mediapipe 是动态引入的，被并进去会拖慢首屏。`vendor-three`（815KB / gzip 208KB，含 GLTFLoader 与 meshopt 解码器）同理：只有详情页的 3D 动作示范用到，动态 import + IntersectionObserver 滚入视口才加载（另按需拉 597KB 的 `intro/xbot.glb`），永不进首屏，也不与 PlayView 的 MediaPipe GPU 推理共存。
 3. **产物预压缩**（`scripts/precompress.mjs`）：给 js/css/svg/wasm 等文本类资源生成 `.gz`（`.task` 模型本身是 zip，压了反而更大，跳过），14.7MB 的 wasm 压到 4.0MB。配合 nginx `gzip_static on` 直接读文件，省掉每个请求现压 14MB 的 CPU 开销。
 
 服务器侧用 `docs/nginx.conf`：`gzip_static on` 需要 nginx 编入 `http_gzip_static_module`（`nginx -V` 确认；没有就删掉那一行，回退到 `gzip on` 现压）。wasm 必须有 `application/wasm` MIME，否则 `WebAssembly.instantiateStreaming` 会拒绝加载。
@@ -208,5 +211,6 @@ curl -sI https://game.yft.design/play/yoga | head -1
 第三方资源遵循各自协议：
 
 - **MediaPipe Tasks Vision**（`@mediapipe/tasks-vision`、`public/wasm/`、`public/models/pose_landmarker_lite.task`）：Apache-2.0，Google
+- **Three.js** 与 `public/intro/xbot.glb`（MIT，来自 three.js 官方示例库，人物源自 Mixamo X-Bot）
 - 其余 npm 依赖见 `package.json`，协议以各自包内 LICENSE 为准
 - `src/data/games.ts` 的游戏元数据整理自 [dongdongpark.com](https://dongdongpark.com) 公开页面，仅用于玩法对齐与学习研究，内容版权归原站所有
