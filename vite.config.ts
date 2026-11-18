@@ -33,6 +33,11 @@ export default defineConfig({
               name: 'vendor-vue',
               test: /[\\/]node_modules[\\/](?:@vue|vue|vue-router|pinia|@vueuse)[\\/]/,
             },
+            {
+              // 详情页 3D 示范用，动态 import 触达，永不进首屏
+              name: 'vendor-three',
+              test: /[\\/]node_modules[\\/]three[\\/]/,
+            },
           ],
         },
       },

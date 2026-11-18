@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { GAMES, GAME_MAP } from '@/data/games'
 import { bgOf, hasImpl } from '@/games'
 import GameCard from '@/components/GameCard.vue'
+import Intro3D from '@/components/Intro3D.vue'
 
 const route = useRoute()
 const game = computed(() => GAME_MAP.get(String(route.params.slug)))
@@ -61,16 +62,19 @@ const bgUrl = (slug: string) => `${base}bg/${bgOf(slug)}.svg`
 
         <div class="card p-6 mt-7">
           <h2 class="font-black text-lg mb-3">怎么玩</h2>
-          <ol class="space-y-3">
-            <li v-for="(h, i) in game.hows" :key="i" class="flex gap-3 items-start">
-              <span
-                class="w-6 h-6 rounded-full grid place-items-center text-[12px] font-black text-white shrink-0 mt-0.5"
-                :style="{ background: game.color }"
-                >{{ i + 1 }}</span
-              >
-              <span class="text-[15px] text-slate-600 leading-relaxed">{{ h }}</span>
-            </li>
-          </ol>
+          <div class="grid md:grid-cols-[232px_1fr] gap-6 items-start">
+            <Intro3D :slug="game.slug" :color="game.color" :types="game.types" />
+            <ol class="space-y-3">
+              <li v-for="(h, i) in game.hows" :key="i" class="flex gap-3 items-start">
+                <span
+                  class="w-6 h-6 rounded-full grid place-items-center text-[12px] font-black text-white shrink-0 mt-0.5"
+                  :style="{ background: game.color }"
+                  >{{ i + 1 }}</span
+                >
+                <span class="text-[15px] text-slate-600 leading-relaxed">{{ h }}</span>
+              </li>
+            </ol>
+          </div>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-5 mt-5">

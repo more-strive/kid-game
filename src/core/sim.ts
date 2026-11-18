@@ -16,6 +16,78 @@ export interface SimPose {
   action: 'wave' | 'jump' | 'squat' | 'arms' | 'tpose' | 'idle'
 }
 
+/** 骨架控制点：由这些值即可合成完整 33 关键点（sim 演示与详情页 3D 示范共用） */
+export interface SkeletonCtrl {
+  cx: number
+  headY: number
+  shY: number
+  hipY: number
+  kneeY: number
+  ankleY: number
+  shX: number
+  hipX: number
+  kneeX: number
+  /** 左/右手腕（玩家自身左右） */
+  lw: { x: number; y: number }
+  rw: { x: number; y: number }
+  /** 可选的左右腿差异化（详情页 3D 示范动作用；缺省左右对称） */
+  lKneeY?: number
+  rKneeY?: number
+  lAnkleY?: number
+  rAnkleY?: number
+  /** 膝盖横向偏移（相对 cx 的距离，正值向外） */
+  lKneeX?: number
+  rKneeX?: number
+}
+
+/** 由控制点合成 MediaPipe Pose 的 33 个关键点（归一化坐标，y 向下） */
+export function lmFromCtrl(c: SkeletonCtrl): LM[] {
+  const { cx, headY, shY, hipY, kneeY, ankleY, shX, hipX, kneeX, lw, rw } = c
+  const lm: LM[] = Array.from({ length: 33 }, () => P(0.5, 0.5, 0))
+  lm[0] = P(cx, headY, 1) // nose
+  lm[1] = P(cx - 0.018, headY - 0.03, 1)
+  lm[2] = P(cx, headY - 0.045, 1)
+  lm[3] = P(cx + 0.018, headY - 0.03, 1)
+  lm[4] = P(cx - 0.03, headY - 0.005, 1)
+  lm[5] = P(cx + 0.03, headY - 0.005, 1)
+  lm[6] = P(cx - 0.038, headY + 0.005, 1)
+  lm[7] = P(cx + 0.038, headY + 0.005, 1)
+  lm[8] = P(cx - 0.03, headY - 0.09, 1)
+  lm[9] = P(cx + 0.03, headY - 0.09, 1)
+  lm[10] = P(cx - 0.04, headY - 0.1, 1)
+  lm[11] = P(cx - shX, shY, 1)
+  lm[12] = P(cx + shX, shY, 1)
+  const mid = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
+    x: (a.x + b.x) / 2 + 0.012,
+    y: (a.y + b.y) / 2 + 0.012,
+  })
+  const le = mid(lm[11], lw)
+  const re = mid(lm[12], rw)
+  lm[13] = P(le.x, le.y, 1)
+  lm[14] = P(re.x, re.y, 1)
+  lm[15] = P(lw.x, lw.y, 1)
+  lm[16] = P(rw.x, rw.y, 1)
+  lm[17] = P(lw.x, lw.y + 0.01, 1)
+  lm[18] = P(rw.x, rw.y + 0.01, 1)
+  lm[19] = P(lw.x, lw.y + 0.02, 1)
+  lm[20] = P(rw.x, rw.y + 0.02, 1)
+  lm[21] = P(lw.x, lw.y + 0.025, 1)
+  lm[22] = P(rw.x, rw.y + 0.025, 1)
+  lm[23] = P(cx - hipX, hipY, 1)
+  lm[24] = P(cx + hipX, hipY, 1)
+  lm[25] = P(cx - (c.lKneeX ?? kneeX), c.lKneeY ?? kneeY, 1)
+  lm[26] = P(cx + (c.rKneeX ?? kneeX), c.rKneeY ?? kneeY, 1)
+  const lAY = c.lAnkleY ?? ankleY
+  const rAY = c.rAnkleY ?? ankleY
+  lm[27] = P(cx - hipX - 0.01, lAY, 1)
+  lm[28] = P(cx + hipX + 0.01, rAY, 1)
+  lm[29] = P(cx - hipX - 0.01, lAY + 0.03, 1)
+  lm[30] = P(cx + hipX + 0.01, rAY + 0.03, 1)
+  lm[31] = P(cx - hipX - 0.01, lAY + 0.045, 1)
+  lm[32] = P(cx + hipX + 0.01, rAY + 0.045, 1)
+  return lm
+}
+
 export function simPose(t: number, variant = 0): SimPose {
   const phase = t * 0.001
   const wob = Math.sin(phase * 1.1 + variant) * 0.006
@@ -76,46 +148,7 @@ export function simPose(t: number, variant = 0): SimPose {
     rw.y = shY
   }
 
-  const lm: LM[] = Array.from({ length: 33 }, () => P(0.5, 0.5, 0))
-  lm[0] = P(cx, headY, 1) // nose
-  lm[1] = P(cx - 0.018, headY - 0.03, 1)
-  lm[2] = P(cx, headY - 0.045, 1)
-  lm[3] = P(cx + 0.018, headY - 0.03, 1)
-  lm[4] = P(cx - 0.03, headY - 0.005, 1)
-  lm[5] = P(cx + 0.03, headY - 0.005, 1)
-  lm[6] = P(cx - 0.038, headY + 0.005, 1)
-  lm[7] = P(cx + 0.038, headY + 0.005, 1)
-  lm[8] = P(cx - 0.03, headY - 0.09, 1)
-  lm[9] = P(cx + 0.03, headY - 0.09, 1)
-  lm[10] = P(cx - 0.04, headY - 0.1, 1)
-  lm[11] = P(cx - shX, shY, 1)
-  lm[12] = P(cx + shX, shY, 1)
-  const mid = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
-    x: (a.x + b.x) / 2 + 0.012,
-    y: (a.y + b.y) / 2 + 0.012,
-  })
-  const le = mid(lm[11], lw)
-  const re = mid(lm[12], rw)
-  lm[13] = P(le.x, le.y, 1)
-  lm[14] = P(re.x, re.y, 1)
-  lm[15] = P(lw.x, lw.y, 1)
-  lm[16] = P(rw.x, rw.y, 1)
-  lm[17] = P(lw.x, lw.y + 0.01, 1)
-  lm[18] = P(rw.x, rw.y + 0.01, 1)
-  lm[19] = P(lw.x, lw.y + 0.02, 1)
-  lm[20] = P(rw.x, rw.y + 0.02, 1)
-  lm[21] = P(lw.x, lw.y + 0.025, 1)
-  lm[22] = P(rw.x, rw.y + 0.025, 1)
-  lm[23] = P(cx - hipX, hipY, 1)
-  lm[24] = P(cx + hipX, hipY, 1)
-  lm[25] = P(cx - kneeX, kneeY, 1)
-  lm[26] = P(cx + kneeX, kneeY, 1)
-  lm[27] = P(cx - hipX - 0.01, ankleY, 1)
-  lm[28] = P(cx + hipX + 0.01, ankleY, 1)
-  lm[29] = P(cx - hipX - 0.01, ankleY + 0.03, 1)
-  lm[30] = P(cx + hipX + 0.01, ankleY + 0.03, 1)
-  lm[31] = P(cx - hipX - 0.01, ankleY + 0.045, 1)
-  lm[32] = P(cx + hipX + 0.01, ankleY + 0.045, 1)
+  const lm = lmFromCtrl({ cx, headY, shY, hipY, kneeY, ankleY, shX, hipX, kneeX, lw, rw })
   return { lm, action }
 }
 
