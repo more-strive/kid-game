@@ -23,6 +23,7 @@ const HIT_WIN = 0.5 // 顶点命中窗 ±×躯干
 const TAP_CD = 0.2 // 拍击冷却
 const HAND_R = 16
 const LOST_T = 1.3 // 丢球后重开时长
+const LEAVE_T = 0.6 // 检测不到该玩家超过该秒数 → 收球（过滤闪现误检留下的“幽灵球”）
 
 interface Ball {
   state: 'up' | 'down' | 'lost'
@@ -50,6 +51,8 @@ interface PState {
   lostCount: number
   lowMode: boolean
   ready: boolean
+  /** 最后一次检测到该玩家的时刻：用于判断“离开画面”并收起球 */
+  seenAt: number
 }
 
 class BounceBall extends BaseGame implements Game {
@@ -65,9 +68,13 @@ class BounceBall extends BaseGame implements Game {
   bannerText = ''
   bannerT = 0
 
+  private newBall(): Ball {
+    return { state: 'up', t: 0, dur: FIRST_UP, side: 1, low: false, h: 0, wantSwitch: false, crossed: false }
+  }
+
   private newPS(): PState {
     return {
-      ball: { state: 'up', t: 0, dur: FIRST_UP, side: 1, low: false, h: 0, wantSwitch: false, crossed: false },
+      ball: this.newBall(),
       anchorX: this.W / 2,
       hipY: this.H * 0.6,
       groundY: this.H * 0.85,
@@ -81,7 +88,17 @@ class BounceBall extends BaseGame implements Game {
       lostCount: 0,
       lowMode: false,
       ready: false,
+      seenAt: -10,
     }
+  }
+
+  /** 玩家离开画面：收起球与连拍（统计保留），别在屏幕上留一颗没人拍的球 */
+  private resetPS(st: PState) {
+    st.ready = false
+    st.streak = 0
+    st.lastTapAt = -10
+    st.lowMode = false
+    st.ball = this.newBall()
   }
 
   tick(f: PoseFrame, dt: number) {
@@ -101,11 +118,20 @@ class BounceBall extends BaseGame implements Game {
       }
     }
 
+    // 横幅计时每帧只走一次（原来放在玩家循环里，双人时会被减两次）
+    if (this.bannerT > 0) this.bannerT -= dt
+
     for (let pi = 0; pi < 2; pi++) {
       const st = this.ps[pi]
       const b = f.bodies[pi]
+      if (b) st.seenAt = this.t
+      // 这个位置的人已经离开画面：超过 LEAVE_T 就把球收掉，
+      // 否则误检出的第二个人会留下一颗永远在弹、谁也拍不到的幽灵球
+      if (st.ready && !b && this.t - st.seenAt > LEAVE_T) {
+        this.resetPS(st)
+        continue
+      }
       const ball = st.ball
-      if (this.bannerT > 0) this.bannerT -= dt
 
       // 身体标定
       if (b) {
