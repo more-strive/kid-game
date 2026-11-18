@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, seatLost } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { glow, outlineTxt, ring, txt } from '@/core/draw'
 
@@ -59,6 +59,7 @@ class SeaLion extends BaseGame implements Game {
     this.newPS(),
     this.newPS(),
   ]
+  private seenAt = [-9, -9]
 
   private newPS(): PState {
     return {
@@ -100,6 +101,12 @@ class SeaLion extends BaseGame implements Game {
       const st = this.ps[pi]
       const b = f.bodies[pi]
       const z = this.zone(pi)
+      // 人真的走了就撤掉标定：脖子上的圈和投掷节奏都挂在旧锚点上
+      if (seatLost(this.seenAt, pi, b, this.t) && st.ready) {
+        st.ready = false
+        st.neckRings = 0
+        this.throws = this.throws.filter((t) => t.owner !== pi)
+      }
       // 头部锚点平滑（对齐站点 1-exp(-dt*1.5)）
       if (b) {
         const headX = b.head.x * this.W

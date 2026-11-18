@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, seatLost } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, glow, outlineTxt, ring, star, txt } from '@/core/draw'
 
@@ -89,6 +89,8 @@ class StarStomp extends BaseGame implements Game {
     return pi === 0 ? { x0: this.W * 0.04, x1: this.W * 0.48 } : { x0: this.W * 0.52, x1: this.W * 0.96 }
   }
 
+  private seenAt = [-9, -9]
+
   private present() {
     return this.players.filter((p) => p.body).length
   }
@@ -99,6 +101,12 @@ class StarStomp extends BaseGame implements Game {
       const st = this.ps[pi]
       const b = f.bodies[pi]
       const z = this.zone(pi)
+      // 人真的走了就撤掉标定：否则影子和星星锚点会在原地一直留着
+      if (seatLost(this.seenAt, pi, b, this.t) && st.ready) {
+        st.ready = false
+        st.stars.length = 0
+        st.holes.length = 0
+      }
 
       // 影子锚点：x 跟髋（1.6/s），y 跟最低的脚（下 3/s 上 0.8/s，对齐站点）
       if (b) {

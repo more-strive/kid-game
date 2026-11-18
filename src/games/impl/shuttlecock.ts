@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, seatLost } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { glow, outlineTxt, txt } from '@/core/draw'
 
@@ -69,6 +69,7 @@ function newDeck(): Deck {
 class Shuttlecock extends BaseGame implements Game {
   cfg = DIFF[this.ctx.difficulty] ?? DIFF[1]
   decks = [newDeck(), newDeck()]
+  private seenAt = [-9, -9]
   shuttle: Shuttle = this.newShuttle(0, 0)
   combo = 0
   best = 0
@@ -98,6 +99,20 @@ class Shuttlecock extends BaseGame implements Game {
     for (let pi = 0; pi < 2; pi++) {
       const dk = this.decks[pi]
       const b = f.bodies[pi]
+      // 人真的走了就撤掉标定：踢点判定圈和鞋会留在原地
+      if (seatLost(this.seenAt, pi, b, this.t) && dk.ready) {
+        dk.ready = false
+        // 球正飞向这个人的话要改投：否则球会停在空中（fly 分支靠 dk.ready 推进）
+        const sh = this.shuttle
+        if (sh.to === pi) {
+          const other = 1 - pi
+          if (this.players[other].body) this.serve(other, sh.side)
+          else {
+            sh.state = 'wait'
+            sh.t = 0
+          }
+        }
+      }
       if (!b) continue
       const torso = Math.max(60, Math.max(0.05, b.scale) * this.H)
       const hipX = b.hipC.x * this.W
@@ -180,6 +195,9 @@ class Shuttlecock extends BaseGame implements Game {
         const side = Math.random() < 0.5 ? 0 : 1
         this.serve(s.to, side)
       }
+    } else if (s.state === 'wait') {
+      // 原本的接球人走开了：等有人重新标定好再发球
+      if (this.decks[0].ready || this.decks[1].ready) this.serve(s.to, Math.random() < 0.5 ? 0 : 1)
     }
 
     // 统计
@@ -213,8 +231,15 @@ class Shuttlecock extends BaseGame implements Game {
   }
 
   /** 踢起重发：从踢点（脚高过球心则修正到脚上）以 apex 重新踢起 */
+  /** 目标玩家不在位时改投另一位（都没标定就保持原目标，等 wait 分支恢复） */
+  private readyTarget(prefer: number) {
+    if (this.decks[prefer].ready) return prefer
+    const other = 1 - prefer
+    return this.decks[other].ready ? other : prefer
+  }
+
   private serve(to: number, side: number) {
-    this.newServe(to, side)
+    this.newServe(this.readyTarget(to), side)
   }
 
   /** 到达膝位的预计时间 W()：1/60 步长数值积分（≤5s） */

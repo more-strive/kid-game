@@ -167,6 +167,19 @@ export function updateSeats(
   }
 }
 
+/**
+ * 席位是否已经真的离开（连续缺席超过 hold 秒）。
+ * 用于撤销“只置真不复位”的标定：那类 ready 标志会让影子/圈/花盆在原来的位置
+ * 永久留着，孩子换个位置回来还按旧锚点判定。短暂丢帧（< hold）不算离开。
+ */
+export function seatLost(seen: number[], i: number, b: Body | null | undefined, t: number, hold = 1.2) {
+  if (b) {
+    seen[i] = t
+    return false
+  }
+  return t - seen[i] > hold
+}
+
 /** 取更快的那只手 */
 export function fastHand(b: Body | null) {
   if (!b) return null

@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, seatLost } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { outlineTxt, txt } from '@/core/draw'
 
@@ -48,6 +48,7 @@ class WaterFlowers extends BaseGame implements Game {
     { x: this.W / 2, r: this.H * 0.64, t: this.H * 0.2, ready: false },
   ]
   gapT = [0.6, 0.6]
+  private seenAt = [-9, -9]
   thirstHint = 0
   bannerText = ''
   bannerT = 0
@@ -77,6 +78,18 @@ class WaterFlowers extends BaseGame implements Game {
       const b = f.bodies[pi]
       const z = this.zone(pi)
       const pots = this.pots[pi]
+      // 人真的走了就撤掉标定：花盆不该留在原地，回来按新位置重新摆
+      if (seatLost(this.seenAt, pi, b, this.t) && st.ready) {
+        st.ready = false
+        for (const p of pots) {
+          p.state = 'thirsty'
+          p.level = 0.1
+          p.shown = 0.1
+          p.stateT = 0
+          p.hold = false
+          p.crossed = false
+        }
+      }
 
       // 锚点跟随（横向死区 0.6T 慢跟）
       if (b) {
