@@ -144,6 +144,29 @@ export function swingSpeed(b: Body | null) {
   return Math.max(b.lHandV, b.rHandV)
 }
 
+/**
+ * 席位活性维护：检测到 body 即激活，连续消失超过 hold 秒才撤销。
+ * 姿态检测固定 numPoses=2，偶尔会把家具/影子/身后的人误检成第二个 pose；
+ * 如果席位只在首次出现时置 true，这个“幽灵玩家”会永久占座——双人规则被误触发、
+ * 缺席者卡住结算、特效/软管永远画不出来。这里统一按“人走了就撤座”处理。
+ */
+export function updateSeats(
+  active: boolean[],
+  seen: number[],
+  bodies: (Body | null | undefined)[],
+  now: number,
+  hold = 1.2,
+) {
+  for (let i = 0; i < active.length; i++) {
+    if (bodies[i]) {
+      active[i] = true
+      seen[i] = now
+    } else if (active[i] && now - seen[i] > hold) {
+      active[i] = false
+    }
+  }
+}
+
 /** 取更快的那只手 */
 export function fastHand(b: Body | null) {
   if (!b) return null

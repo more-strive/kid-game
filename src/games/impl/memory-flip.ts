@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, txt } from '@/core/draw'
 
@@ -102,6 +102,8 @@ class MemoryFlip extends BaseGame implements Game {
   turns = 0
   private scored = 0
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private absent = 0
   private moveT = 0
   private lastF: PoseFrame | null = null
@@ -175,7 +177,7 @@ class MemoryFlip extends BaseGame implements Game {
       this.turn = 0
       this.boardP = 0
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
 
     const elapsed = this.t - this.phaseAt
     switch (this.phase) {

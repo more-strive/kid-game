@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, txt } from '@/core/draw'
 
@@ -143,6 +143,8 @@ class SpaceFighter extends BaseGame implements Game {
   flyers: Flyer[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   lives = LIVES
   rocks: Rock[] = []
   enemies: Enemy[] = []
@@ -187,7 +189,7 @@ class SpaceFighter extends BaseGame implements Game {
       this.seats = 2
       this.layout()
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     if (this.over) return
 
     // —— 生成（间隔 × ramp）——

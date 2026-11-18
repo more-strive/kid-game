@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, rr, txt } from '@/core/draw'
 
@@ -115,6 +115,8 @@ class PizzaChef extends BaseGame implements Game {
   chefs: Chef[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private ovenGlow = 0
   private U = Math.min(this.W, this.H) / 720
 
@@ -208,7 +210,7 @@ class PizzaChef extends BaseGame implements Game {
 
   tick(f: PoseFrame, dt: number) {
     if (this.seats === 1 && f.bodies[1]) this.seats = 2
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     if (this.ovenGlow > 0) this.ovenGlow -= dt
     const duo = this.seats > 1
     for (let i = 0; i < (duo ? 2 : 1); i++) {

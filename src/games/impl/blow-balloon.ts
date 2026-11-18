@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, ring, txt } from '@/core/draw'
 
@@ -68,6 +68,8 @@ class BlowBalloon extends BaseGame implements Game {
   nextAt = FIRST_AT
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   tied = 0
   perfect = 0
   overs = 0
@@ -111,7 +113,9 @@ class BlowBalloon extends BaseGame implements Game {
   }
 
   tick(f: PoseFrame, dt: number) {
-    void f
+    // 吹气判定不依赖人体姿态，但气嘴软管要连到（可能有的）人头，座位按“人走了就撤座”维护
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
+    this.seats = Math.max(1, this.seatActive.filter(Boolean).length)
     // 结局动画推进
     if (this.popFx > 0) this.popFx -= dt
     if (this.fx) {

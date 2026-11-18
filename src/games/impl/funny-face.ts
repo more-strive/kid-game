@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, rr, txt } from '@/core/draw'
 
@@ -85,6 +85,8 @@ class FunnyFace extends BaseGame implements Game {
   seats = 1
   turn = 0
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private shot = [false, false]
   private firstShooter = -1
   private charge = [0, 0]
@@ -155,7 +157,7 @@ class FunnyFace extends BaseGame implements Game {
 
   tick(f: PoseFrame, dt: number) {
     if (this.seats === 1 && f.bodies[1]) this.seats = 2
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     const duo = this.seats > 1
     if (this.flash > 0) this.flash -= dt
 

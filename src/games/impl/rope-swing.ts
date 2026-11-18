@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, txt } from '@/core/draw'
 
@@ -252,6 +252,8 @@ class RopeSwing extends BaseGame implements Game {
   cities: City[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private U = Math.min(this.W, this.H) / 720
   private stars: { x: number; y: number; vx: number; vy: number }[] = []
 
@@ -266,7 +268,7 @@ class RopeSwing extends BaseGame implements Game {
     if (this.seats === 1 && f.bodies[1]) {
       this.seats = 2
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     const duo = this.seats > 1
     for (let i = 0; i < (duo ? 2 : 1); i++) {
       if (!this.seatActive[i] && !(i === 0)) continue

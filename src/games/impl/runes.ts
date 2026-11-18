@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, ring, txt } from '@/core/draw'
 
@@ -248,6 +248,8 @@ class Runes extends BaseGame implements Game {
   zoner: Zoner[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   U = Math.min(this.W, this.H) / 720
 
   constructor(ctx: GameContext) {
@@ -267,7 +269,7 @@ class Runes extends BaseGame implements Game {
     if (this.seats === 1 && f.bodies[1]) {
       this.seats = 2
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     let allBroken = true
     let anyActive = false
     for (let i = 0; i < 2; i++) {

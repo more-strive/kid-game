@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, txt } from '@/core/draw'
 
@@ -87,6 +87,8 @@ class SnowballFight extends BaseGame implements Game {
   splats: { x: number; y: number; life: number }[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private throwIn = FIRST_AT
   private b = 0
   private saidBlock = false
@@ -117,7 +119,7 @@ class SnowballFight extends BaseGame implements Game {
       this.seats = 2
       this.layoutSnowmen()
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     // 雪花
     for (const fl of this.flakes) {
       fl.y += fl.v * dt

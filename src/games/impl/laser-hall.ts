@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { outlineTxt, txt } from '@/core/draw'
 
@@ -83,6 +83,10 @@ class LaserHall extends BaseGame implements Game {
   lastKind: Kind = 'high'
   /** 曾经出现在画面里的席位（用于「全员出局」判定，避免空席位或走开的人卡住收局） */
   private seatActive = [false, false]
+
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+
+  private seatSeen = [-9, -9]
   private wasJumping = [false, false]
 
   constructor(ctx: GameContext) {
@@ -108,7 +112,7 @@ class LaserHall extends BaseGame implements Game {
   tick(f: PoseFrame, dt: number) {
     // 只有「曾经出现在画面里」的席位才参与存活统计：
     // 单人局空着的 2 号席位、以及中途走出画面的玩家，都不该算作「全员出局」的依据。
-    for (let i = 0; i < 2; i++) if (this.player(i).body) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     const living = this.states.filter((s, i) => s.alive && this.seatActive[i]).length
     if (this.seatActive.some(Boolean) && living === 0) {
       this.ctx.finish()

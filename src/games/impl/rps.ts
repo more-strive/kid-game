@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, txt } from '@/core/draw'
 
@@ -71,6 +71,8 @@ class Rps extends BaseGame implements Game {
   rpsPlayers: RpsPlayer[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   phase: 'wait' | 'call' | 'window' | 'reveal' = 'wait'
   phaseAt = 0
   round = 0
@@ -122,7 +124,7 @@ class Rps extends BaseGame implements Game {
       this.seats = 2
       this.layout()
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
 
     // 香蕉粒子
     for (const bn of this.bananas) {

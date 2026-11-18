@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, txt } from '@/core/draw'
 
@@ -69,6 +69,8 @@ class CarryBall extends BaseGame implements Game {
   cfg = DIFF[this.ctx.difficulty] ?? DIFF[0]
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private endL = 0.5 // 左板端高度 0~1
   private endR = 0.5
   private s = 0 // 球沿板位置（-1~1）
@@ -141,7 +143,7 @@ class CarryBall extends BaseGame implements Game {
 
   tick(f: PoseFrame, dt: number) {
     if (this.seats === 1 && f.bodies[1]) this.seats = 2
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     const duo = this.seats > 1
 
     // —— 板端跟手 ——

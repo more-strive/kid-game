@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, ring, rr, txt } from '@/core/draw'
 
@@ -87,6 +87,8 @@ class ClockArms extends BaseGame implements Game {
   states: PState[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   phase: 'wait' | 'ask' | 'done' | 'reveal' = 'wait'
   phaseAt = 0
   q: Q | null = null
@@ -164,7 +166,7 @@ class ClockArms extends BaseGame implements Game {
       this.seats = 2
       this.layout()
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
 
     if (this.phase === 'wait') {
       if (this.t >= FIRST_DELAY) this.nextQ()

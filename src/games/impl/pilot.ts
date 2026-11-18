@@ -1,4 +1,4 @@
-import { BaseGame } from '@/core/base'
+import { BaseGame, updateSeats } from '@/core/base'
 import type { Body, Game, GameContext, PoseFrame } from '@/core/types'
 import { circle, outlineTxt, txt } from '@/core/draw'
 
@@ -130,6 +130,8 @@ class Pilot extends BaseGame implements Game {
   flyers: Flyer[] = []
   seats = 1
   private seatActive = [false, false]
+  /** 每个席位最后一次检测到人的时刻（配合 updateSeats 判断离场） */
+  private seatSeen = [-9, -9]
   private rng = mulberry32(7)
   private cursor = 0
   private prevX = 0
@@ -202,7 +204,7 @@ class Pilot extends BaseGame implements Game {
       this.seats = 2
       this.layout()
     }
-    for (let i = 0; i < 2; i++) if (f.bodies[i]) this.seatActive[i] = true
+    updateSeats(this.seatActive, this.seatSeen, f.bodies, this.t)
     let maxS = 0
     for (let i = 0; i < 2; i++) {
       if (!this.seatActive[i]) continue // 缺席席位不飞行、不计分（仓库口径）
